@@ -92,6 +92,17 @@ func (rl *RateLimiter) cleanup() {
 	}
 }
 
+// NormalizeURLScheme converts WebSocket URL schemes to their HTTP equivalents
+// (wss:// -> https://, ws:// -> http://) and trims trailing slashes.
+// wss:// is replaced before ws:// to avoid "wss://" matching the "ws://" prefix
+// and producing a malformed "https://" with a stray "s".
+func NormalizeURLScheme(rawURL string) string {
+	u := strings.TrimRight(rawURL, "/")
+	u = strings.Replace(u, "wss://", "https://", 1)
+	u = strings.Replace(u, "ws://", "http://", 1)
+	return u
+}
+
 // GetClientIP extracts the client IP from the request.
 // When trustProxy is true, it uses the first IP from X-Forwarded-For.
 func GetClientIP(r *http.Request, trustProxy bool) string {
