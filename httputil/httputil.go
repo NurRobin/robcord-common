@@ -119,6 +119,90 @@ func GetClientIP(r *http.Request, trustProxy bool) string {
 	return host
 }
 
+// GetClientIPHeader extracts the client IP using a configurable header and
+// optional CIDR-based proxy trust. When trustedCIDRs is non-empty, the header
+// is only trusted if the request's remote address falls within one of the
+// listed CIDR ranges. If the remote address is untrusted or the header is
+// empty, the raw remote address is returned.
+func GetClientIPHeader(r *http.Request, trustProxy bool, header, trustedCIDRs string) string {
+	if !trustProxy {
+		return remoteIP(r)
+	}
+
+	if trustedCIDRs != "" && !isFromTrustedProxy(r, trustedCIDRs) {
+		return remoteIP(r)
+	}
+
+	if val := r.Header.Get(header); val != "" {
+		return extractIPFromHeader(header, val)
+	}
+
+	return remoteIP(r)
+}
+
+// remoteIP extracts the IP portion from r.RemoteAddr (strips port).
+func remoteIP(r *http.Request) string {
+	host, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		return r.RemoteAddr
+	}
+	return host
+}
+
+// isFromTrustedProxy checks whether the request's remote address falls within
+// any of the comma-separated CIDR ranges.
+func isFromTrustedProxy(r *http.Request, cidrs string) bool {
+	remote := net.ParseIP(remoteIP(r))
+	if remote == nil {
+		return false
+	}
+	for _, entry := range strings.Split(cidrs, ",") {
+		entry = strings.TrimSpace(entry)
+		if entry == "" {
+			continue
+		}
+		_, network, err := net.ParseCIDR(entry)
+		if err != nil {
+			continue
+		}
+		if network.Contains(remote) {
+			return true
+		}
+	}
+	return false
+}
+
+// extractIPFromHeader reads the client IP from a proxy header value.
+// Multi-value headers (X-Forwarded-For, Forwarded) return the leftmost entry.
+// Single-value headers (X-Real-IP, CF-Connecting-IP) return the full value.
+func extractIPFromHeader(header, value string) string {
+	switch header {
+	case "X-Forwarded-For":
+		parts := strings.SplitN(value, ",", 2)
+		return strings.TrimSpace(parts[0])
+	case "Forwarded":
+		// RFC 7239: Forwarded: for=192.0.2.1;proto=https
+		for _, param := range strings.Split(value, ";") {
+			param = strings.TrimSpace(param)
+			if strings.HasPrefix(strings.ToLower(param), "for=") {
+				ip := strings.TrimPrefix(param[4:], "\"")
+				ip = strings.TrimSuffix(ip, "\"")
+				// Handle IPv6 in brackets: [::1]
+				ip = strings.TrimPrefix(ip, "[")
+				ip = strings.TrimSuffix(ip, "]")
+				// Strip port if present
+				if host, _, err := net.SplitHostPort(ip); err == nil {
+					return host
+				}
+				return ip
+			}
+		}
+		return strings.TrimSpace(value)
+	default:
+		return strings.TrimSpace(value)
+	}
+}
+
 // RateLimit wraps a handler with IP-based rate limiting.
 func RateLimit(rl *RateLimiter, trustProxy bool, next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
