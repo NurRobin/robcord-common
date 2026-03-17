@@ -15,8 +15,9 @@ type Migration struct {
 	Up func(*sql.DB) error
 }
 
-// RunMigrations applies all unapplied migrations in order.
+// RunMigrations applies all unapplied migrations in slice order.
 // It creates the schema_migrations tracking table if it doesn't exist.
+// Callers must provide migrations sorted by ID.
 func RunMigrations(conn *sql.DB, migrations []Migration) error {
 	if _, err := conn.Exec(`
 		CREATE TABLE IF NOT EXISTS schema_migrations (
