@@ -16,9 +16,42 @@ func WriteJSON(w http.ResponseWriter, status int, data interface{}) {
 	json.NewEncoder(w).Encode(data)
 }
 
-// WriteError writes a JSON error response.
+// WriteError writes a structured error response with a stable error code
+// and a human-readable message: {"error": "code", "message": "text"}.
+// The error code is derived from the HTTP status code.
 func WriteError(w http.ResponseWriter, status int, message string) {
-	WriteJSON(w, status, map[string]string{"error": message})
+	code := httpCodeToErrorCode(status)
+	WriteJSON(w, status, map[string]string{"error": code, "message": message})
+}
+
+// WriteErrorCode writes a structured error response with an explicit error code.
+func WriteErrorCode(w http.ResponseWriter, status int, code string, message string) {
+	WriteJSON(w, status, map[string]string{"error": code, "message": message})
+}
+
+func httpCodeToErrorCode(status int) string {
+	switch status {
+	case 400:
+		return "bad_request"
+	case 401:
+		return "unauthorized"
+	case 403:
+		return "forbidden"
+	case 404:
+		return "not_found"
+	case 409:
+		return "conflict"
+	case 429:
+		return "rate_limited"
+	case 500:
+		return "internal_error"
+	case 502:
+		return "bad_gateway"
+	case 503:
+		return "service_unavailable"
+	default:
+		return "error"
+	}
 }
 
 // RateLimiter implements a simple in-memory token bucket rate limiter.
