@@ -34,6 +34,7 @@ type EventStreamRequest struct {
 	//	*EventStreamRequest_Heartbeat
 	//	*EventStreamRequest_DispatchResponse
 	//	*EventStreamRequest_TokenRotationAck
+	//	*EventStreamRequest_CertRenewalAck
 	Payload       isEventStreamRequest_Payload `protobuf_oneof:"payload"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -139,6 +140,15 @@ func (x *EventStreamRequest) GetTokenRotationAck() *TokenRotationAck {
 	return nil
 }
 
+func (x *EventStreamRequest) GetCertRenewalAck() *CertRenewalAck {
+	if x != nil {
+		if x, ok := x.Payload.(*EventStreamRequest_CertRenewalAck); ok {
+			return x.CertRenewalAck
+		}
+	}
+	return nil
+}
+
 type isEventStreamRequest_Payload interface {
 	isEventStreamRequest_Payload()
 }
@@ -176,6 +186,11 @@ type EventStreamRequest_TokenRotationAck struct {
 	TokenRotationAck *TokenRotationAck `protobuf:"bytes,13,opt,name=token_rotation_ack,json=tokenRotationAck,proto3,oneof"`
 }
 
+type EventStreamRequest_CertRenewalAck struct {
+	// Cert renewal acknowledgement (response to CertRenewalEvent)
+	CertRenewalAck *CertRenewalAck `protobuf:"bytes,14,opt,name=cert_renewal_ack,json=certRenewalAck,proto3,oneof"`
+}
+
 func (*EventStreamRequest_SessionOpenAck) isEventStreamRequest_Payload() {}
 
 func (*EventStreamRequest_SessionFrame) isEventStreamRequest_Payload() {}
@@ -189,6 +204,8 @@ func (*EventStreamRequest_Heartbeat) isEventStreamRequest_Payload() {}
 func (*EventStreamRequest_DispatchResponse) isEventStreamRequest_Payload() {}
 
 func (*EventStreamRequest_TokenRotationAck) isEventStreamRequest_Payload() {}
+
+func (*EventStreamRequest_CertRenewalAck) isEventStreamRequest_Payload() {}
 
 // EventStreamResponse is sent by the Zentrale on the EventStream.
 type EventStreamResponse struct {
@@ -611,6 +628,7 @@ type BridgeEvent struct {
 	//	*BridgeEvent_UserUnbanned
 	//	*BridgeEvent_ConnectionModeChanged
 	//	*BridgeEvent_TokenRotationRequested
+	//	*BridgeEvent_CertRenewal
 	//	*BridgeEvent_Unknown
 	Event         isBridgeEvent_Event `protobuf_oneof:"event"`
 	unknownFields protoimpl.UnknownFields
@@ -690,6 +708,15 @@ func (x *BridgeEvent) GetTokenRotationRequested() *TokenRotationRequestedEvent {
 	return nil
 }
 
+func (x *BridgeEvent) GetCertRenewal() *CertRenewalEvent {
+	if x != nil {
+		if x, ok := x.Event.(*BridgeEvent_CertRenewal); ok {
+			return x.CertRenewal
+		}
+	}
+	return nil
+}
+
 func (x *BridgeEvent) GetUnknown() *UnknownEvent {
 	if x != nil {
 		if x, ok := x.Event.(*BridgeEvent_Unknown); ok {
@@ -719,6 +746,10 @@ type BridgeEvent_TokenRotationRequested struct {
 	TokenRotationRequested *TokenRotationRequestedEvent `protobuf:"bytes,4,opt,name=token_rotation_requested,json=tokenRotationRequested,proto3,oneof"`
 }
 
+type BridgeEvent_CertRenewal struct {
+	CertRenewal *CertRenewalEvent `protobuf:"bytes,5,opt,name=cert_renewal,json=certRenewal,proto3,oneof"`
+}
+
 type BridgeEvent_Unknown struct {
 	// Generic fallback for forward-compatible events the receiver doesn't know yet.
 	// The receiver logs the event_type and ignores the payload.
@@ -732,6 +763,8 @@ func (*BridgeEvent_UserUnbanned) isBridgeEvent_Event() {}
 func (*BridgeEvent_ConnectionModeChanged) isBridgeEvent_Event() {}
 
 func (*BridgeEvent_TokenRotationRequested) isBridgeEvent_Event() {}
+
+func (*BridgeEvent_CertRenewal) isBridgeEvent_Event() {}
 
 func (*BridgeEvent_Unknown) isBridgeEvent_Event() {}
 
@@ -1476,11 +1509,127 @@ func (x *TokenRotationAck) GetOverlapSeconds() int32 {
 	return 0
 }
 
+// CertRenewalEvent is sent by the Zentrale when it detects the workspace's
+// client cert is nearing expiry. Contains a fresh cert+key signed by the CA.
+// The Workspace writes the new cert to disk and reconnects.
+type CertRenewalEvent struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	CertPem       string                 `protobuf:"bytes,1,opt,name=cert_pem,json=certPem,proto3" json:"cert_pem,omitempty"` // new client certificate (PEM)
+	KeyPem        string                 `protobuf:"bytes,2,opt,name=key_pem,json=keyPem,proto3" json:"key_pem,omitempty"`    // new client private key (PEM)
+	CaPem         string                 `protobuf:"bytes,3,opt,name=ca_pem,json=caPem,proto3" json:"ca_pem,omitempty"`       // CA cert (PEM, for verification — may be unchanged)
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CertRenewalEvent) Reset() {
+	*x = CertRenewalEvent{}
+	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CertRenewalEvent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CertRenewalEvent) ProtoMessage() {}
+
+func (x *CertRenewalEvent) ProtoReflect() protoreflect.Message {
+	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CertRenewalEvent.ProtoReflect.Descriptor instead.
+func (*CertRenewalEvent) Descriptor() ([]byte, []int) {
+	return file_robcord_bridge_v1_bridge_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *CertRenewalEvent) GetCertPem() string {
+	if x != nil {
+		return x.CertPem
+	}
+	return ""
+}
+
+func (x *CertRenewalEvent) GetKeyPem() string {
+	if x != nil {
+		return x.KeyPem
+	}
+	return ""
+}
+
+func (x *CertRenewalEvent) GetCaPem() string {
+	if x != nil {
+		return x.CaPem
+	}
+	return ""
+}
+
+// CertRenewalAck confirms the Workspace has stored the new cert.
+type CertRenewalAck struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Ok            bool                   `protobuf:"varint,1,opt,name=ok,proto3" json:"ok,omitempty"`
+	Error         string                 `protobuf:"bytes,2,opt,name=error,proto3" json:"error,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CertRenewalAck) Reset() {
+	*x = CertRenewalAck{}
+	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CertRenewalAck) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CertRenewalAck) ProtoMessage() {}
+
+func (x *CertRenewalAck) ProtoReflect() protoreflect.Message {
+	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CertRenewalAck.ProtoReflect.Descriptor instead.
+func (*CertRenewalAck) Descriptor() ([]byte, []int) {
+	return file_robcord_bridge_v1_bridge_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *CertRenewalAck) GetOk() bool {
+	if x != nil {
+		return x.Ok
+	}
+	return false
+}
+
+func (x *CertRenewalAck) GetError() string {
+	if x != nil {
+		return x.Error
+	}
+	return ""
+}
+
 var File_robcord_bridge_v1_bridge_proto protoreflect.FileDescriptor
 
 const file_robcord_bridge_v1_bridge_proto_rawDesc = "" +
 	"\n" +
-	"\x1erobcord/bridge/v1/bridge.proto\x12\x11robcord.bridge.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\x97\x04\n" +
+	"\x1erobcord/bridge/v1/bridge.proto\x12\x11robcord.bridge.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\xe6\x04\n" +
 	"\x12EventStreamRequest\x12M\n" +
 	"\x10session_open_ack\x18\x01 \x01(\v2!.robcord.bridge.v1.SessionOpenAckH\x00R\x0esessionOpenAck\x12F\n" +
 	"\rsession_frame\x18\x02 \x01(\v2\x1f.robcord.bridge.v1.SessionFrameH\x00R\fsessionFrame\x12F\n" +
@@ -1489,7 +1638,8 @@ const file_robcord_bridge_v1_bridge_proto_rawDesc = "" +
 	" \x01(\v2\x17.robcord.bridge.v1.PongH\x00R\x04pong\x12C\n" +
 	"\theartbeat\x18\v \x01(\v2#.robcord.bridge.v1.HeartbeatRequestH\x00R\theartbeat\x12N\n" +
 	"\x11dispatch_response\x18\f \x01(\v2\x1f.robcord.bridge.v1.HttpResponseH\x00R\x10dispatchResponse\x12S\n" +
-	"\x12token_rotation_ack\x18\r \x01(\v2#.robcord.bridge.v1.TokenRotationAckH\x00R\x10tokenRotationAckB\t\n" +
+	"\x12token_rotation_ack\x18\r \x01(\v2#.robcord.bridge.v1.TokenRotationAckH\x00R\x10tokenRotationAck\x12M\n" +
+	"\x10cert_renewal_ack\x18\x0e \x01(\v2!.robcord.bridge.v1.CertRenewalAckH\x00R\x0ecertRenewalAckB\t\n" +
 	"\apayload\"\x91\x04\n" +
 	"\x13EventStreamResponse\x12C\n" +
 	"\fsession_open\x18\x01 \x01(\v2\x1e.robcord.bridge.v1.SessionOpenH\x00R\vsessionOpen\x12F\n" +
@@ -1520,13 +1670,14 @@ const file_robcord_bridge_v1_bridge_proto_rawDesc = "" +
 	"\n" +
 	"session_id\x18\x01 \x01(\tR\tsessionId\x12\x12\n" +
 	"\x04code\x18\x02 \x01(\x05R\x04code\x12\x16\n" +
-	"\x06reason\x18\x03 \x01(\tR\x06reason\"\xbc\x03\n" +
+	"\x06reason\x18\x03 \x01(\tR\x06reason\"\x86\x04\n" +
 	"\vBridgeEvent\x12E\n" +
 	"\vuser_banned\x18\x01 \x01(\v2\".robcord.bridge.v1.UserBannedEventH\x00R\n" +
 	"userBanned\x12K\n" +
 	"\ruser_unbanned\x18\x02 \x01(\v2$.robcord.bridge.v1.UserUnbannedEventH\x00R\fuserUnbanned\x12g\n" +
 	"\x17connection_mode_changed\x18\x03 \x01(\v2-.robcord.bridge.v1.ConnectionModeChangedEventH\x00R\x15connectionModeChanged\x12j\n" +
-	"\x18token_rotation_requested\x18\x04 \x01(\v2..robcord.bridge.v1.TokenRotationRequestedEventH\x00R\x16tokenRotationRequested\x12;\n" +
+	"\x18token_rotation_requested\x18\x04 \x01(\v2..robcord.bridge.v1.TokenRotationRequestedEventH\x00R\x16tokenRotationRequested\x12H\n" +
+	"\fcert_renewal\x18\x05 \x01(\v2#.robcord.bridge.v1.CertRenewalEventH\x00R\vcertRenewal\x12;\n" +
 	"\aunknown\x18\x0f \x01(\v2\x1f.robcord.bridge.v1.UnknownEventH\x00R\aunknownB\a\n" +
 	"\x05event\"*\n" +
 	"\x0fUserBannedEvent\x12\x17\n" +
@@ -1586,7 +1737,14 @@ const file_robcord_bridge_v1_bridge_proto_rawDesc = "" +
 	"\x0foverlap_seconds\x18\x02 \x01(\x05R\x0eoverlapSeconds\"K\n" +
 	"\x10TokenRotationAck\x12\x0e\n" +
 	"\x02ok\x18\x01 \x01(\bR\x02ok\x12'\n" +
-	"\x0foverlap_seconds\x18\x02 \x01(\x05R\x0eoverlapSeconds2\xd0\x01\n" +
+	"\x0foverlap_seconds\x18\x02 \x01(\x05R\x0eoverlapSeconds\"]\n" +
+	"\x10CertRenewalEvent\x12\x19\n" +
+	"\bcert_pem\x18\x01 \x01(\tR\acertPem\x12\x17\n" +
+	"\akey_pem\x18\x02 \x01(\tR\x06keyPem\x12\x15\n" +
+	"\x06ca_pem\x18\x03 \x01(\tR\x05caPem\"6\n" +
+	"\x0eCertRenewalAck\x12\x0e\n" +
+	"\x02ok\x18\x01 \x01(\bR\x02ok\x12\x14\n" +
+	"\x05error\x18\x02 \x01(\tR\x05error2\xd0\x01\n" +
 	"\x14WorkspaceLinkService\x12`\n" +
 	"\vEventStream\x12%.robcord.bridge.v1.EventStreamRequest\x1a&.robcord.bridge.v1.EventStreamResponse(\x010\x01\x12V\n" +
 	"\tHeartbeat\x12#.robcord.bridge.v1.HeartbeatRequest\x1a$.robcord.bridge.v1.HeartbeatResponseB2Z0github.com/robcord/robcord-common/proto/bridgev1b\x06proto3"
@@ -1603,7 +1761,7 @@ func file_robcord_bridge_v1_bridge_proto_rawDescGZIP() []byte {
 	return file_robcord_bridge_v1_bridge_proto_rawDescData
 }
 
-var file_robcord_bridge_v1_bridge_proto_msgTypes = make([]protoimpl.MessageInfo, 22)
+var file_robcord_bridge_v1_bridge_proto_msgTypes = make([]protoimpl.MessageInfo, 24)
 var file_robcord_bridge_v1_bridge_proto_goTypes = []any{
 	(*EventStreamRequest)(nil),          // 0: robcord.bridge.v1.EventStreamRequest
 	(*EventStreamResponse)(nil),         // 1: robcord.bridge.v1.EventStreamResponse
@@ -1625,9 +1783,11 @@ var file_robcord_bridge_v1_bridge_proto_goTypes = []any{
 	(*HeartbeatResponse)(nil),           // 17: robcord.bridge.v1.HeartbeatResponse
 	(*TokenRotationRequestedEvent)(nil), // 18: robcord.bridge.v1.TokenRotationRequestedEvent
 	(*TokenRotationAck)(nil),            // 19: robcord.bridge.v1.TokenRotationAck
-	nil,                                 // 20: robcord.bridge.v1.HttpRequest.HeadersEntry
-	nil,                                 // 21: robcord.bridge.v1.HttpResponse.HeadersEntry
-	(*timestamppb.Timestamp)(nil),       // 22: google.protobuf.Timestamp
+	(*CertRenewalEvent)(nil),            // 20: robcord.bridge.v1.CertRenewalEvent
+	(*CertRenewalAck)(nil),              // 21: robcord.bridge.v1.CertRenewalAck
+	nil,                                 // 22: robcord.bridge.v1.HttpRequest.HeadersEntry
+	nil,                                 // 23: robcord.bridge.v1.HttpResponse.HeadersEntry
+	(*timestamppb.Timestamp)(nil),       // 24: google.protobuf.Timestamp
 }
 var file_robcord_bridge_v1_bridge_proto_depIdxs = []int32{
 	3,  // 0: robcord.bridge.v1.EventStreamRequest.session_open_ack:type_name -> robcord.bridge.v1.SessionOpenAck
@@ -1637,32 +1797,34 @@ var file_robcord_bridge_v1_bridge_proto_depIdxs = []int32{
 	16, // 4: robcord.bridge.v1.EventStreamRequest.heartbeat:type_name -> robcord.bridge.v1.HeartbeatRequest
 	14, // 5: robcord.bridge.v1.EventStreamRequest.dispatch_response:type_name -> robcord.bridge.v1.HttpResponse
 	19, // 6: robcord.bridge.v1.EventStreamRequest.token_rotation_ack:type_name -> robcord.bridge.v1.TokenRotationAck
-	2,  // 7: robcord.bridge.v1.EventStreamResponse.session_open:type_name -> robcord.bridge.v1.SessionOpen
-	4,  // 8: robcord.bridge.v1.EventStreamResponse.session_frame:type_name -> robcord.bridge.v1.SessionFrame
-	5,  // 9: robcord.bridge.v1.EventStreamResponse.session_close:type_name -> robcord.bridge.v1.SessionClose
-	6,  // 10: robcord.bridge.v1.EventStreamResponse.bridge_event:type_name -> robcord.bridge.v1.BridgeEvent
-	11, // 11: robcord.bridge.v1.EventStreamResponse.ping:type_name -> robcord.bridge.v1.Ping
-	15, // 12: robcord.bridge.v1.EventStreamResponse.dispatch_request:type_name -> robcord.bridge.v1.DispatchRequest
-	17, // 13: robcord.bridge.v1.EventStreamResponse.heartbeat_response:type_name -> robcord.bridge.v1.HeartbeatResponse
-	7,  // 14: robcord.bridge.v1.BridgeEvent.user_banned:type_name -> robcord.bridge.v1.UserBannedEvent
-	8,  // 15: robcord.bridge.v1.BridgeEvent.user_unbanned:type_name -> robcord.bridge.v1.UserUnbannedEvent
-	9,  // 16: robcord.bridge.v1.BridgeEvent.connection_mode_changed:type_name -> robcord.bridge.v1.ConnectionModeChangedEvent
-	18, // 17: robcord.bridge.v1.BridgeEvent.token_rotation_requested:type_name -> robcord.bridge.v1.TokenRotationRequestedEvent
-	10, // 18: robcord.bridge.v1.BridgeEvent.unknown:type_name -> robcord.bridge.v1.UnknownEvent
-	22, // 19: robcord.bridge.v1.Ping.sent_at:type_name -> google.protobuf.Timestamp
-	22, // 20: robcord.bridge.v1.Pong.sent_at:type_name -> google.protobuf.Timestamp
-	20, // 21: robcord.bridge.v1.HttpRequest.headers:type_name -> robcord.bridge.v1.HttpRequest.HeadersEntry
-	21, // 22: robcord.bridge.v1.HttpResponse.headers:type_name -> robcord.bridge.v1.HttpResponse.HeadersEntry
-	13, // 23: robcord.bridge.v1.DispatchRequest.request:type_name -> robcord.bridge.v1.HttpRequest
-	0,  // 24: robcord.bridge.v1.WorkspaceLinkService.EventStream:input_type -> robcord.bridge.v1.EventStreamRequest
-	16, // 25: robcord.bridge.v1.WorkspaceLinkService.Heartbeat:input_type -> robcord.bridge.v1.HeartbeatRequest
-	1,  // 26: robcord.bridge.v1.WorkspaceLinkService.EventStream:output_type -> robcord.bridge.v1.EventStreamResponse
-	17, // 27: robcord.bridge.v1.WorkspaceLinkService.Heartbeat:output_type -> robcord.bridge.v1.HeartbeatResponse
-	26, // [26:28] is the sub-list for method output_type
-	24, // [24:26] is the sub-list for method input_type
-	24, // [24:24] is the sub-list for extension type_name
-	24, // [24:24] is the sub-list for extension extendee
-	0,  // [0:24] is the sub-list for field type_name
+	21, // 7: robcord.bridge.v1.EventStreamRequest.cert_renewal_ack:type_name -> robcord.bridge.v1.CertRenewalAck
+	2,  // 8: robcord.bridge.v1.EventStreamResponse.session_open:type_name -> robcord.bridge.v1.SessionOpen
+	4,  // 9: robcord.bridge.v1.EventStreamResponse.session_frame:type_name -> robcord.bridge.v1.SessionFrame
+	5,  // 10: robcord.bridge.v1.EventStreamResponse.session_close:type_name -> robcord.bridge.v1.SessionClose
+	6,  // 11: robcord.bridge.v1.EventStreamResponse.bridge_event:type_name -> robcord.bridge.v1.BridgeEvent
+	11, // 12: robcord.bridge.v1.EventStreamResponse.ping:type_name -> robcord.bridge.v1.Ping
+	15, // 13: robcord.bridge.v1.EventStreamResponse.dispatch_request:type_name -> robcord.bridge.v1.DispatchRequest
+	17, // 14: robcord.bridge.v1.EventStreamResponse.heartbeat_response:type_name -> robcord.bridge.v1.HeartbeatResponse
+	7,  // 15: robcord.bridge.v1.BridgeEvent.user_banned:type_name -> robcord.bridge.v1.UserBannedEvent
+	8,  // 16: robcord.bridge.v1.BridgeEvent.user_unbanned:type_name -> robcord.bridge.v1.UserUnbannedEvent
+	9,  // 17: robcord.bridge.v1.BridgeEvent.connection_mode_changed:type_name -> robcord.bridge.v1.ConnectionModeChangedEvent
+	18, // 18: robcord.bridge.v1.BridgeEvent.token_rotation_requested:type_name -> robcord.bridge.v1.TokenRotationRequestedEvent
+	20, // 19: robcord.bridge.v1.BridgeEvent.cert_renewal:type_name -> robcord.bridge.v1.CertRenewalEvent
+	10, // 20: robcord.bridge.v1.BridgeEvent.unknown:type_name -> robcord.bridge.v1.UnknownEvent
+	24, // 21: robcord.bridge.v1.Ping.sent_at:type_name -> google.protobuf.Timestamp
+	24, // 22: robcord.bridge.v1.Pong.sent_at:type_name -> google.protobuf.Timestamp
+	22, // 23: robcord.bridge.v1.HttpRequest.headers:type_name -> robcord.bridge.v1.HttpRequest.HeadersEntry
+	23, // 24: robcord.bridge.v1.HttpResponse.headers:type_name -> robcord.bridge.v1.HttpResponse.HeadersEntry
+	13, // 25: robcord.bridge.v1.DispatchRequest.request:type_name -> robcord.bridge.v1.HttpRequest
+	0,  // 26: robcord.bridge.v1.WorkspaceLinkService.EventStream:input_type -> robcord.bridge.v1.EventStreamRequest
+	16, // 27: robcord.bridge.v1.WorkspaceLinkService.Heartbeat:input_type -> robcord.bridge.v1.HeartbeatRequest
+	1,  // 28: robcord.bridge.v1.WorkspaceLinkService.EventStream:output_type -> robcord.bridge.v1.EventStreamResponse
+	17, // 29: robcord.bridge.v1.WorkspaceLinkService.Heartbeat:output_type -> robcord.bridge.v1.HeartbeatResponse
+	28, // [28:30] is the sub-list for method output_type
+	26, // [26:28] is the sub-list for method input_type
+	26, // [26:26] is the sub-list for extension type_name
+	26, // [26:26] is the sub-list for extension extendee
+	0,  // [0:26] is the sub-list for field type_name
 }
 
 func init() { file_robcord_bridge_v1_bridge_proto_init() }
@@ -1678,6 +1840,7 @@ func file_robcord_bridge_v1_bridge_proto_init() {
 		(*EventStreamRequest_Heartbeat)(nil),
 		(*EventStreamRequest_DispatchResponse)(nil),
 		(*EventStreamRequest_TokenRotationAck)(nil),
+		(*EventStreamRequest_CertRenewalAck)(nil),
 	}
 	file_robcord_bridge_v1_bridge_proto_msgTypes[1].OneofWrappers = []any{
 		(*EventStreamResponse_SessionOpen)(nil),
@@ -1693,6 +1856,7 @@ func file_robcord_bridge_v1_bridge_proto_init() {
 		(*BridgeEvent_UserUnbanned)(nil),
 		(*BridgeEvent_ConnectionModeChanged)(nil),
 		(*BridgeEvent_TokenRotationRequested)(nil),
+		(*BridgeEvent_CertRenewal)(nil),
 		(*BridgeEvent_Unknown)(nil),
 	}
 	type x struct{}
@@ -1701,7 +1865,7 @@ func file_robcord_bridge_v1_bridge_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_robcord_bridge_v1_bridge_proto_rawDesc), len(file_robcord_bridge_v1_bridge_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   22,
+			NumMessages:   24,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
