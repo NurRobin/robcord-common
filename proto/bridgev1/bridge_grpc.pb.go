@@ -21,7 +21,6 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	WorkspaceLinkService_EventStream_FullMethodName = "/robcord.bridge.v1.WorkspaceLinkService/EventStream"
 	WorkspaceLinkService_Heartbeat_FullMethodName   = "/robcord.bridge.v1.WorkspaceLinkService/Heartbeat"
-	WorkspaceLinkService_RotateToken_FullMethodName = "/robcord.bridge.v1.WorkspaceLinkService/RotateToken"
 )
 
 // WorkspaceLinkServiceClient is the client API for WorkspaceLinkService service.
@@ -39,9 +38,6 @@ type WorkspaceLinkServiceClient interface {
 	// Workspace calls periodically to report status.
 	// Can also be sent inline on the EventStream.
 	Heartbeat(ctx context.Context, in *HeartbeatRequest, opts ...grpc.CallOption) (*HeartbeatResponse, error)
-	// RotateToken: called by Zentrale-initiated logic (workspace calls this after
-	// receiving a rotation instruction). Replaces POST /api/claim/token/rotate.
-	RotateToken(ctx context.Context, in *RotateTokenRequest, opts ...grpc.CallOption) (*RotateTokenResponse, error)
 }
 
 type workspaceLinkServiceClient struct {
@@ -75,16 +71,6 @@ func (c *workspaceLinkServiceClient) Heartbeat(ctx context.Context, in *Heartbea
 	return out, nil
 }
 
-func (c *workspaceLinkServiceClient) RotateToken(ctx context.Context, in *RotateTokenRequest, opts ...grpc.CallOption) (*RotateTokenResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(RotateTokenResponse)
-	err := c.cc.Invoke(ctx, WorkspaceLinkService_RotateToken_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // WorkspaceLinkServiceServer is the server API for WorkspaceLinkService service.
 // All implementations must embed UnimplementedWorkspaceLinkServiceServer
 // for forward compatibility.
@@ -100,9 +86,6 @@ type WorkspaceLinkServiceServer interface {
 	// Workspace calls periodically to report status.
 	// Can also be sent inline on the EventStream.
 	Heartbeat(context.Context, *HeartbeatRequest) (*HeartbeatResponse, error)
-	// RotateToken: called by Zentrale-initiated logic (workspace calls this after
-	// receiving a rotation instruction). Replaces POST /api/claim/token/rotate.
-	RotateToken(context.Context, *RotateTokenRequest) (*RotateTokenResponse, error)
 	mustEmbedUnimplementedWorkspaceLinkServiceServer()
 }
 
@@ -118,9 +101,6 @@ func (UnimplementedWorkspaceLinkServiceServer) EventStream(grpc.BidiStreamingSer
 }
 func (UnimplementedWorkspaceLinkServiceServer) Heartbeat(context.Context, *HeartbeatRequest) (*HeartbeatResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Heartbeat not implemented")
-}
-func (UnimplementedWorkspaceLinkServiceServer) RotateToken(context.Context, *RotateTokenRequest) (*RotateTokenResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method RotateToken not implemented")
 }
 func (UnimplementedWorkspaceLinkServiceServer) mustEmbedUnimplementedWorkspaceLinkServiceServer() {}
 func (UnimplementedWorkspaceLinkServiceServer) testEmbeddedByValue()                              {}
@@ -168,24 +148,6 @@ func _WorkspaceLinkService_Heartbeat_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
-func _WorkspaceLinkService_RotateToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RotateTokenRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(WorkspaceLinkServiceServer).RotateToken(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: WorkspaceLinkService_RotateToken_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(WorkspaceLinkServiceServer).RotateToken(ctx, req.(*RotateTokenRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // WorkspaceLinkService_ServiceDesc is the grpc.ServiceDesc for WorkspaceLinkService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -196,10 +158,6 @@ var WorkspaceLinkService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Heartbeat",
 			Handler:    _WorkspaceLinkService_Heartbeat_Handler,
-		},
-		{
-			MethodName: "RotateToken",
-			Handler:    _WorkspaceLinkService_RotateToken_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
