@@ -33,6 +33,7 @@ type EventStreamRequest struct {
 	//	*EventStreamRequest_Pong
 	//	*EventStreamRequest_Heartbeat
 	//	*EventStreamRequest_DispatchResponse
+	//	*EventStreamRequest_TokenRotationAck
 	Payload       isEventStreamRequest_Payload `protobuf_oneof:"payload"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -129,6 +130,15 @@ func (x *EventStreamRequest) GetDispatchResponse() *HttpResponse {
 	return nil
 }
 
+func (x *EventStreamRequest) GetTokenRotationAck() *TokenRotationAck {
+	if x != nil {
+		if x, ok := x.Payload.(*EventStreamRequest_TokenRotationAck); ok {
+			return x.TokenRotationAck
+		}
+	}
+	return nil
+}
+
 type isEventStreamRequest_Payload interface {
 	isEventStreamRequest_Payload()
 }
@@ -161,6 +171,11 @@ type EventStreamRequest_DispatchResponse struct {
 	DispatchResponse *HttpResponse `protobuf:"bytes,12,opt,name=dispatch_response,json=dispatchResponse,proto3,oneof"`
 }
 
+type EventStreamRequest_TokenRotationAck struct {
+	// Token rotation acknowledgement (response to TokenRotationRequestedEvent)
+	TokenRotationAck *TokenRotationAck `protobuf:"bytes,13,opt,name=token_rotation_ack,json=tokenRotationAck,proto3,oneof"`
+}
+
 func (*EventStreamRequest_SessionOpenAck) isEventStreamRequest_Payload() {}
 
 func (*EventStreamRequest_SessionFrame) isEventStreamRequest_Payload() {}
@@ -172,6 +187,8 @@ func (*EventStreamRequest_Pong) isEventStreamRequest_Payload() {}
 func (*EventStreamRequest_Heartbeat) isEventStreamRequest_Payload() {}
 
 func (*EventStreamRequest_DispatchResponse) isEventStreamRequest_Payload() {}
+
+func (*EventStreamRequest_TokenRotationAck) isEventStreamRequest_Payload() {}
 
 // EventStreamResponse is sent by the Zentrale on the EventStream.
 type EventStreamResponse struct {
@@ -593,6 +610,7 @@ type BridgeEvent struct {
 	//	*BridgeEvent_UserBanned
 	//	*BridgeEvent_UserUnbanned
 	//	*BridgeEvent_ConnectionModeChanged
+	//	*BridgeEvent_TokenRotationRequested
 	//	*BridgeEvent_Unknown
 	Event         isBridgeEvent_Event `protobuf_oneof:"event"`
 	unknownFields protoimpl.UnknownFields
@@ -663,6 +681,15 @@ func (x *BridgeEvent) GetConnectionModeChanged() *ConnectionModeChangedEvent {
 	return nil
 }
 
+func (x *BridgeEvent) GetTokenRotationRequested() *TokenRotationRequestedEvent {
+	if x != nil {
+		if x, ok := x.Event.(*BridgeEvent_TokenRotationRequested); ok {
+			return x.TokenRotationRequested
+		}
+	}
+	return nil
+}
+
 func (x *BridgeEvent) GetUnknown() *UnknownEvent {
 	if x != nil {
 		if x, ok := x.Event.(*BridgeEvent_Unknown); ok {
@@ -688,6 +715,10 @@ type BridgeEvent_ConnectionModeChanged struct {
 	ConnectionModeChanged *ConnectionModeChangedEvent `protobuf:"bytes,3,opt,name=connection_mode_changed,json=connectionModeChanged,proto3,oneof"`
 }
 
+type BridgeEvent_TokenRotationRequested struct {
+	TokenRotationRequested *TokenRotationRequestedEvent `protobuf:"bytes,4,opt,name=token_rotation_requested,json=tokenRotationRequested,proto3,oneof"`
+}
+
 type BridgeEvent_Unknown struct {
 	// Generic fallback for forward-compatible events the receiver doesn't know yet.
 	// The receiver logs the event_type and ignores the payload.
@@ -699,6 +730,8 @@ func (*BridgeEvent_UserBanned) isBridgeEvent_Event() {}
 func (*BridgeEvent_UserUnbanned) isBridgeEvent_Event() {}
 
 func (*BridgeEvent_ConnectionModeChanged) isBridgeEvent_Event() {}
+
+func (*BridgeEvent_TokenRotationRequested) isBridgeEvent_Event() {}
 
 func (*BridgeEvent_Unknown) isBridgeEvent_Event() {}
 
@@ -748,6 +781,7 @@ func (x *UserBannedEvent) GetUserId() string {
 
 type UserUnbannedEvent struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -780,6 +814,13 @@ func (x *UserUnbannedEvent) ProtoReflect() protoreflect.Message {
 // Deprecated: Use UserUnbannedEvent.ProtoReflect.Descriptor instead.
 func (*UserUnbannedEvent) Descriptor() ([]byte, []int) {
 	return file_robcord_bridge_v1_bridge_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *UserUnbannedEvent) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
 }
 
 type ConnectionModeChangedEvent struct {
@@ -1328,8 +1369,9 @@ func (x *HeartbeatResponse) GetIntervalSeconds() int32 {
 	return 0
 }
 
-// RotateTokenRequest initiates a shared token rotation.
-type RotateTokenRequest struct {
+// TokenRotationRequestedEvent is sent by the Zentrale to initiate token rotation.
+// The Workspace applies the new token and responds with TokenRotationAck.
+type TokenRotationRequestedEvent struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	NewToken       string                 `protobuf:"bytes,1,opt,name=new_token,json=newToken,proto3" json:"new_token,omitempty"`
 	OverlapSeconds int32                  `protobuf:"varint,2,opt,name=overlap_seconds,json=overlapSeconds,proto3" json:"overlap_seconds,omitempty"`
@@ -1337,20 +1379,20 @@ type RotateTokenRequest struct {
 	sizeCache      protoimpl.SizeCache
 }
 
-func (x *RotateTokenRequest) Reset() {
-	*x = RotateTokenRequest{}
+func (x *TokenRotationRequestedEvent) Reset() {
+	*x = TokenRotationRequestedEvent{}
 	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *RotateTokenRequest) String() string {
+func (x *TokenRotationRequestedEvent) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*RotateTokenRequest) ProtoMessage() {}
+func (*TokenRotationRequestedEvent) ProtoMessage() {}
 
-func (x *RotateTokenRequest) ProtoReflect() protoreflect.Message {
+func (x *TokenRotationRequestedEvent) ProtoReflect() protoreflect.Message {
 	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1362,27 +1404,27 @@ func (x *RotateTokenRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use RotateTokenRequest.ProtoReflect.Descriptor instead.
-func (*RotateTokenRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use TokenRotationRequestedEvent.ProtoReflect.Descriptor instead.
+func (*TokenRotationRequestedEvent) Descriptor() ([]byte, []int) {
 	return file_robcord_bridge_v1_bridge_proto_rawDescGZIP(), []int{18}
 }
 
-func (x *RotateTokenRequest) GetNewToken() string {
+func (x *TokenRotationRequestedEvent) GetNewToken() string {
 	if x != nil {
 		return x.NewToken
 	}
 	return ""
 }
 
-func (x *RotateTokenRequest) GetOverlapSeconds() int32 {
+func (x *TokenRotationRequestedEvent) GetOverlapSeconds() int32 {
 	if x != nil {
 		return x.OverlapSeconds
 	}
 	return 0
 }
 
-// RotateTokenResponse confirms the rotation.
-type RotateTokenResponse struct {
+// TokenRotationAck confirms that the Workspace has applied the new token.
+type TokenRotationAck struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	Ok             bool                   `protobuf:"varint,1,opt,name=ok,proto3" json:"ok,omitempty"`
 	OverlapSeconds int32                  `protobuf:"varint,2,opt,name=overlap_seconds,json=overlapSeconds,proto3" json:"overlap_seconds,omitempty"`
@@ -1390,20 +1432,20 @@ type RotateTokenResponse struct {
 	sizeCache      protoimpl.SizeCache
 }
 
-func (x *RotateTokenResponse) Reset() {
-	*x = RotateTokenResponse{}
+func (x *TokenRotationAck) Reset() {
+	*x = TokenRotationAck{}
 	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *RotateTokenResponse) String() string {
+func (x *TokenRotationAck) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*RotateTokenResponse) ProtoMessage() {}
+func (*TokenRotationAck) ProtoMessage() {}
 
-func (x *RotateTokenResponse) ProtoReflect() protoreflect.Message {
+func (x *TokenRotationAck) ProtoReflect() protoreflect.Message {
 	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1415,19 +1457,19 @@ func (x *RotateTokenResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use RotateTokenResponse.ProtoReflect.Descriptor instead.
-func (*RotateTokenResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use TokenRotationAck.ProtoReflect.Descriptor instead.
+func (*TokenRotationAck) Descriptor() ([]byte, []int) {
 	return file_robcord_bridge_v1_bridge_proto_rawDescGZIP(), []int{19}
 }
 
-func (x *RotateTokenResponse) GetOk() bool {
+func (x *TokenRotationAck) GetOk() bool {
 	if x != nil {
 		return x.Ok
 	}
 	return false
 }
 
-func (x *RotateTokenResponse) GetOverlapSeconds() int32 {
+func (x *TokenRotationAck) GetOverlapSeconds() int32 {
 	if x != nil {
 		return x.OverlapSeconds
 	}
@@ -1438,7 +1480,7 @@ var File_robcord_bridge_v1_bridge_proto protoreflect.FileDescriptor
 
 const file_robcord_bridge_v1_bridge_proto_rawDesc = "" +
 	"\n" +
-	"\x1erobcord/bridge/v1/bridge.proto\x12\x11robcord.bridge.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\xc2\x03\n" +
+	"\x1erobcord/bridge/v1/bridge.proto\x12\x11robcord.bridge.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\x97\x04\n" +
 	"\x12EventStreamRequest\x12M\n" +
 	"\x10session_open_ack\x18\x01 \x01(\v2!.robcord.bridge.v1.SessionOpenAckH\x00R\x0esessionOpenAck\x12F\n" +
 	"\rsession_frame\x18\x02 \x01(\v2\x1f.robcord.bridge.v1.SessionFrameH\x00R\fsessionFrame\x12F\n" +
@@ -1446,7 +1488,8 @@ const file_robcord_bridge_v1_bridge_proto_rawDesc = "" +
 	"\x04pong\x18\n" +
 	" \x01(\v2\x17.robcord.bridge.v1.PongH\x00R\x04pong\x12C\n" +
 	"\theartbeat\x18\v \x01(\v2#.robcord.bridge.v1.HeartbeatRequestH\x00R\theartbeat\x12N\n" +
-	"\x11dispatch_response\x18\f \x01(\v2\x1f.robcord.bridge.v1.HttpResponseH\x00R\x10dispatchResponseB\t\n" +
+	"\x11dispatch_response\x18\f \x01(\v2\x1f.robcord.bridge.v1.HttpResponseH\x00R\x10dispatchResponse\x12S\n" +
+	"\x12token_rotation_ack\x18\r \x01(\v2#.robcord.bridge.v1.TokenRotationAckH\x00R\x10tokenRotationAckB\t\n" +
 	"\apayload\"\x91\x04\n" +
 	"\x13EventStreamResponse\x12C\n" +
 	"\fsession_open\x18\x01 \x01(\v2\x1e.robcord.bridge.v1.SessionOpenH\x00R\vsessionOpen\x12F\n" +
@@ -1477,17 +1520,19 @@ const file_robcord_bridge_v1_bridge_proto_rawDesc = "" +
 	"\n" +
 	"session_id\x18\x01 \x01(\tR\tsessionId\x12\x12\n" +
 	"\x04code\x18\x02 \x01(\x05R\x04code\x12\x16\n" +
-	"\x06reason\x18\x03 \x01(\tR\x06reason\"\xd0\x02\n" +
+	"\x06reason\x18\x03 \x01(\tR\x06reason\"\xbc\x03\n" +
 	"\vBridgeEvent\x12E\n" +
 	"\vuser_banned\x18\x01 \x01(\v2\".robcord.bridge.v1.UserBannedEventH\x00R\n" +
 	"userBanned\x12K\n" +
 	"\ruser_unbanned\x18\x02 \x01(\v2$.robcord.bridge.v1.UserUnbannedEventH\x00R\fuserUnbanned\x12g\n" +
-	"\x17connection_mode_changed\x18\x03 \x01(\v2-.robcord.bridge.v1.ConnectionModeChangedEventH\x00R\x15connectionModeChanged\x12;\n" +
+	"\x17connection_mode_changed\x18\x03 \x01(\v2-.robcord.bridge.v1.ConnectionModeChangedEventH\x00R\x15connectionModeChanged\x12j\n" +
+	"\x18token_rotation_requested\x18\x04 \x01(\v2..robcord.bridge.v1.TokenRotationRequestedEventH\x00R\x16tokenRotationRequested\x12;\n" +
 	"\aunknown\x18\x0f \x01(\v2\x1f.robcord.bridge.v1.UnknownEventH\x00R\aunknownB\a\n" +
 	"\x05event\"*\n" +
 	"\x0fUserBannedEvent\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\tR\x06userId\"\x13\n" +
-	"\x11UserUnbannedEvent\"0\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\",\n" +
+	"\x11UserUnbannedEvent\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\"0\n" +
 	"\x1aConnectionModeChangedEvent\x12\x12\n" +
 	"\x04mode\x18\x01 \x01(\tR\x04mode\"G\n" +
 	"\fUnknownEvent\x12\x1d\n" +
@@ -1535,17 +1580,16 @@ const file_robcord_bridge_v1_bridge_proto_rawDesc = "" +
 	"\x02ok\x18\x01 \x01(\bR\x02ok\x12!\n" +
 	"\fzentrale_url\x18\x02 \x01(\tR\vzentraleUrl\x12\x18\n" +
 	"\aversion\x18\x03 \x01(\tR\aversion\x12)\n" +
-	"\x10interval_seconds\x18\x04 \x01(\x05R\x0fintervalSeconds\"Z\n" +
-	"\x12RotateTokenRequest\x12\x1b\n" +
+	"\x10interval_seconds\x18\x04 \x01(\x05R\x0fintervalSeconds\"c\n" +
+	"\x1bTokenRotationRequestedEvent\x12\x1b\n" +
 	"\tnew_token\x18\x01 \x01(\tR\bnewToken\x12'\n" +
-	"\x0foverlap_seconds\x18\x02 \x01(\x05R\x0eoverlapSeconds\"N\n" +
-	"\x13RotateTokenResponse\x12\x0e\n" +
+	"\x0foverlap_seconds\x18\x02 \x01(\x05R\x0eoverlapSeconds\"K\n" +
+	"\x10TokenRotationAck\x12\x0e\n" +
 	"\x02ok\x18\x01 \x01(\bR\x02ok\x12'\n" +
-	"\x0foverlap_seconds\x18\x02 \x01(\x05R\x0eoverlapSeconds2\xae\x02\n" +
+	"\x0foverlap_seconds\x18\x02 \x01(\x05R\x0eoverlapSeconds2\xd0\x01\n" +
 	"\x14WorkspaceLinkService\x12`\n" +
 	"\vEventStream\x12%.robcord.bridge.v1.EventStreamRequest\x1a&.robcord.bridge.v1.EventStreamResponse(\x010\x01\x12V\n" +
-	"\tHeartbeat\x12#.robcord.bridge.v1.HeartbeatRequest\x1a$.robcord.bridge.v1.HeartbeatResponse\x12\\\n" +
-	"\vRotateToken\x12%.robcord.bridge.v1.RotateTokenRequest\x1a&.robcord.bridge.v1.RotateTokenResponseB2Z0github.com/robcord/robcord-common/proto/bridgev1b\x06proto3"
+	"\tHeartbeat\x12#.robcord.bridge.v1.HeartbeatRequest\x1a$.robcord.bridge.v1.HeartbeatResponseB2Z0github.com/robcord/robcord-common/proto/bridgev1b\x06proto3"
 
 var (
 	file_robcord_bridge_v1_bridge_proto_rawDescOnce sync.Once
@@ -1561,29 +1605,29 @@ func file_robcord_bridge_v1_bridge_proto_rawDescGZIP() []byte {
 
 var file_robcord_bridge_v1_bridge_proto_msgTypes = make([]protoimpl.MessageInfo, 22)
 var file_robcord_bridge_v1_bridge_proto_goTypes = []any{
-	(*EventStreamRequest)(nil),         // 0: robcord.bridge.v1.EventStreamRequest
-	(*EventStreamResponse)(nil),        // 1: robcord.bridge.v1.EventStreamResponse
-	(*SessionOpen)(nil),                // 2: robcord.bridge.v1.SessionOpen
-	(*SessionOpenAck)(nil),             // 3: robcord.bridge.v1.SessionOpenAck
-	(*SessionFrame)(nil),               // 4: robcord.bridge.v1.SessionFrame
-	(*SessionClose)(nil),               // 5: robcord.bridge.v1.SessionClose
-	(*BridgeEvent)(nil),                // 6: robcord.bridge.v1.BridgeEvent
-	(*UserBannedEvent)(nil),            // 7: robcord.bridge.v1.UserBannedEvent
-	(*UserUnbannedEvent)(nil),          // 8: robcord.bridge.v1.UserUnbannedEvent
-	(*ConnectionModeChangedEvent)(nil), // 9: robcord.bridge.v1.ConnectionModeChangedEvent
-	(*UnknownEvent)(nil),               // 10: robcord.bridge.v1.UnknownEvent
-	(*Ping)(nil),                       // 11: robcord.bridge.v1.Ping
-	(*Pong)(nil),                       // 12: robcord.bridge.v1.Pong
-	(*HttpRequest)(nil),                // 13: robcord.bridge.v1.HttpRequest
-	(*HttpResponse)(nil),               // 14: robcord.bridge.v1.HttpResponse
-	(*DispatchRequest)(nil),            // 15: robcord.bridge.v1.DispatchRequest
-	(*HeartbeatRequest)(nil),           // 16: robcord.bridge.v1.HeartbeatRequest
-	(*HeartbeatResponse)(nil),          // 17: robcord.bridge.v1.HeartbeatResponse
-	(*RotateTokenRequest)(nil),         // 18: robcord.bridge.v1.RotateTokenRequest
-	(*RotateTokenResponse)(nil),        // 19: robcord.bridge.v1.RotateTokenResponse
-	nil,                                // 20: robcord.bridge.v1.HttpRequest.HeadersEntry
-	nil,                                // 21: robcord.bridge.v1.HttpResponse.HeadersEntry
-	(*timestamppb.Timestamp)(nil),      // 22: google.protobuf.Timestamp
+	(*EventStreamRequest)(nil),          // 0: robcord.bridge.v1.EventStreamRequest
+	(*EventStreamResponse)(nil),         // 1: robcord.bridge.v1.EventStreamResponse
+	(*SessionOpen)(nil),                 // 2: robcord.bridge.v1.SessionOpen
+	(*SessionOpenAck)(nil),              // 3: robcord.bridge.v1.SessionOpenAck
+	(*SessionFrame)(nil),                // 4: robcord.bridge.v1.SessionFrame
+	(*SessionClose)(nil),                // 5: robcord.bridge.v1.SessionClose
+	(*BridgeEvent)(nil),                 // 6: robcord.bridge.v1.BridgeEvent
+	(*UserBannedEvent)(nil),             // 7: robcord.bridge.v1.UserBannedEvent
+	(*UserUnbannedEvent)(nil),           // 8: robcord.bridge.v1.UserUnbannedEvent
+	(*ConnectionModeChangedEvent)(nil),  // 9: robcord.bridge.v1.ConnectionModeChangedEvent
+	(*UnknownEvent)(nil),                // 10: robcord.bridge.v1.UnknownEvent
+	(*Ping)(nil),                        // 11: robcord.bridge.v1.Ping
+	(*Pong)(nil),                        // 12: robcord.bridge.v1.Pong
+	(*HttpRequest)(nil),                 // 13: robcord.bridge.v1.HttpRequest
+	(*HttpResponse)(nil),                // 14: robcord.bridge.v1.HttpResponse
+	(*DispatchRequest)(nil),             // 15: robcord.bridge.v1.DispatchRequest
+	(*HeartbeatRequest)(nil),            // 16: robcord.bridge.v1.HeartbeatRequest
+	(*HeartbeatResponse)(nil),           // 17: robcord.bridge.v1.HeartbeatResponse
+	(*TokenRotationRequestedEvent)(nil), // 18: robcord.bridge.v1.TokenRotationRequestedEvent
+	(*TokenRotationAck)(nil),            // 19: robcord.bridge.v1.TokenRotationAck
+	nil,                                 // 20: robcord.bridge.v1.HttpRequest.HeadersEntry
+	nil,                                 // 21: robcord.bridge.v1.HttpResponse.HeadersEntry
+	(*timestamppb.Timestamp)(nil),       // 22: google.protobuf.Timestamp
 }
 var file_robcord_bridge_v1_bridge_proto_depIdxs = []int32{
 	3,  // 0: robcord.bridge.v1.EventStreamRequest.session_open_ack:type_name -> robcord.bridge.v1.SessionOpenAck
@@ -1592,33 +1636,33 @@ var file_robcord_bridge_v1_bridge_proto_depIdxs = []int32{
 	12, // 3: robcord.bridge.v1.EventStreamRequest.pong:type_name -> robcord.bridge.v1.Pong
 	16, // 4: robcord.bridge.v1.EventStreamRequest.heartbeat:type_name -> robcord.bridge.v1.HeartbeatRequest
 	14, // 5: robcord.bridge.v1.EventStreamRequest.dispatch_response:type_name -> robcord.bridge.v1.HttpResponse
-	2,  // 6: robcord.bridge.v1.EventStreamResponse.session_open:type_name -> robcord.bridge.v1.SessionOpen
-	4,  // 7: robcord.bridge.v1.EventStreamResponse.session_frame:type_name -> robcord.bridge.v1.SessionFrame
-	5,  // 8: robcord.bridge.v1.EventStreamResponse.session_close:type_name -> robcord.bridge.v1.SessionClose
-	6,  // 9: robcord.bridge.v1.EventStreamResponse.bridge_event:type_name -> robcord.bridge.v1.BridgeEvent
-	11, // 10: robcord.bridge.v1.EventStreamResponse.ping:type_name -> robcord.bridge.v1.Ping
-	15, // 11: robcord.bridge.v1.EventStreamResponse.dispatch_request:type_name -> robcord.bridge.v1.DispatchRequest
-	17, // 12: robcord.bridge.v1.EventStreamResponse.heartbeat_response:type_name -> robcord.bridge.v1.HeartbeatResponse
-	7,  // 13: robcord.bridge.v1.BridgeEvent.user_banned:type_name -> robcord.bridge.v1.UserBannedEvent
-	8,  // 14: robcord.bridge.v1.BridgeEvent.user_unbanned:type_name -> robcord.bridge.v1.UserUnbannedEvent
-	9,  // 15: robcord.bridge.v1.BridgeEvent.connection_mode_changed:type_name -> robcord.bridge.v1.ConnectionModeChangedEvent
-	10, // 16: robcord.bridge.v1.BridgeEvent.unknown:type_name -> robcord.bridge.v1.UnknownEvent
-	22, // 17: robcord.bridge.v1.Ping.sent_at:type_name -> google.protobuf.Timestamp
-	22, // 18: robcord.bridge.v1.Pong.sent_at:type_name -> google.protobuf.Timestamp
-	20, // 19: robcord.bridge.v1.HttpRequest.headers:type_name -> robcord.bridge.v1.HttpRequest.HeadersEntry
-	21, // 20: robcord.bridge.v1.HttpResponse.headers:type_name -> robcord.bridge.v1.HttpResponse.HeadersEntry
-	13, // 21: robcord.bridge.v1.DispatchRequest.request:type_name -> robcord.bridge.v1.HttpRequest
-	0,  // 22: robcord.bridge.v1.WorkspaceLinkService.EventStream:input_type -> robcord.bridge.v1.EventStreamRequest
-	16, // 23: robcord.bridge.v1.WorkspaceLinkService.Heartbeat:input_type -> robcord.bridge.v1.HeartbeatRequest
-	18, // 24: robcord.bridge.v1.WorkspaceLinkService.RotateToken:input_type -> robcord.bridge.v1.RotateTokenRequest
-	1,  // 25: robcord.bridge.v1.WorkspaceLinkService.EventStream:output_type -> robcord.bridge.v1.EventStreamResponse
-	17, // 26: robcord.bridge.v1.WorkspaceLinkService.Heartbeat:output_type -> robcord.bridge.v1.HeartbeatResponse
-	19, // 27: robcord.bridge.v1.WorkspaceLinkService.RotateToken:output_type -> robcord.bridge.v1.RotateTokenResponse
-	25, // [25:28] is the sub-list for method output_type
-	22, // [22:25] is the sub-list for method input_type
-	22, // [22:22] is the sub-list for extension type_name
-	22, // [22:22] is the sub-list for extension extendee
-	0,  // [0:22] is the sub-list for field type_name
+	19, // 6: robcord.bridge.v1.EventStreamRequest.token_rotation_ack:type_name -> robcord.bridge.v1.TokenRotationAck
+	2,  // 7: robcord.bridge.v1.EventStreamResponse.session_open:type_name -> robcord.bridge.v1.SessionOpen
+	4,  // 8: robcord.bridge.v1.EventStreamResponse.session_frame:type_name -> robcord.bridge.v1.SessionFrame
+	5,  // 9: robcord.bridge.v1.EventStreamResponse.session_close:type_name -> robcord.bridge.v1.SessionClose
+	6,  // 10: robcord.bridge.v1.EventStreamResponse.bridge_event:type_name -> robcord.bridge.v1.BridgeEvent
+	11, // 11: robcord.bridge.v1.EventStreamResponse.ping:type_name -> robcord.bridge.v1.Ping
+	15, // 12: robcord.bridge.v1.EventStreamResponse.dispatch_request:type_name -> robcord.bridge.v1.DispatchRequest
+	17, // 13: robcord.bridge.v1.EventStreamResponse.heartbeat_response:type_name -> robcord.bridge.v1.HeartbeatResponse
+	7,  // 14: robcord.bridge.v1.BridgeEvent.user_banned:type_name -> robcord.bridge.v1.UserBannedEvent
+	8,  // 15: robcord.bridge.v1.BridgeEvent.user_unbanned:type_name -> robcord.bridge.v1.UserUnbannedEvent
+	9,  // 16: robcord.bridge.v1.BridgeEvent.connection_mode_changed:type_name -> robcord.bridge.v1.ConnectionModeChangedEvent
+	18, // 17: robcord.bridge.v1.BridgeEvent.token_rotation_requested:type_name -> robcord.bridge.v1.TokenRotationRequestedEvent
+	10, // 18: robcord.bridge.v1.BridgeEvent.unknown:type_name -> robcord.bridge.v1.UnknownEvent
+	22, // 19: robcord.bridge.v1.Ping.sent_at:type_name -> google.protobuf.Timestamp
+	22, // 20: robcord.bridge.v1.Pong.sent_at:type_name -> google.protobuf.Timestamp
+	20, // 21: robcord.bridge.v1.HttpRequest.headers:type_name -> robcord.bridge.v1.HttpRequest.HeadersEntry
+	21, // 22: robcord.bridge.v1.HttpResponse.headers:type_name -> robcord.bridge.v1.HttpResponse.HeadersEntry
+	13, // 23: robcord.bridge.v1.DispatchRequest.request:type_name -> robcord.bridge.v1.HttpRequest
+	0,  // 24: robcord.bridge.v1.WorkspaceLinkService.EventStream:input_type -> robcord.bridge.v1.EventStreamRequest
+	16, // 25: robcord.bridge.v1.WorkspaceLinkService.Heartbeat:input_type -> robcord.bridge.v1.HeartbeatRequest
+	1,  // 26: robcord.bridge.v1.WorkspaceLinkService.EventStream:output_type -> robcord.bridge.v1.EventStreamResponse
+	17, // 27: robcord.bridge.v1.WorkspaceLinkService.Heartbeat:output_type -> robcord.bridge.v1.HeartbeatResponse
+	26, // [26:28] is the sub-list for method output_type
+	24, // [24:26] is the sub-list for method input_type
+	24, // [24:24] is the sub-list for extension type_name
+	24, // [24:24] is the sub-list for extension extendee
+	0,  // [0:24] is the sub-list for field type_name
 }
 
 func init() { file_robcord_bridge_v1_bridge_proto_init() }
@@ -1633,6 +1677,7 @@ func file_robcord_bridge_v1_bridge_proto_init() {
 		(*EventStreamRequest_Pong)(nil),
 		(*EventStreamRequest_Heartbeat)(nil),
 		(*EventStreamRequest_DispatchResponse)(nil),
+		(*EventStreamRequest_TokenRotationAck)(nil),
 	}
 	file_robcord_bridge_v1_bridge_proto_msgTypes[1].OneofWrappers = []any{
 		(*EventStreamResponse_SessionOpen)(nil),
@@ -1647,6 +1692,7 @@ func file_robcord_bridge_v1_bridge_proto_init() {
 		(*BridgeEvent_UserBanned)(nil),
 		(*BridgeEvent_UserUnbanned)(nil),
 		(*BridgeEvent_ConnectionModeChanged)(nil),
+		(*BridgeEvent_TokenRotationRequested)(nil),
 		(*BridgeEvent_Unknown)(nil),
 	}
 	type x struct{}
