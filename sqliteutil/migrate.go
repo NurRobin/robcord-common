@@ -7,7 +7,8 @@ import (
 
 // DefaultPragmas is the recommended SQLite connection string suffix for
 // WAL mode, 5-second busy timeout, and foreign key enforcement.
-const DefaultPragmas = "?_journal_mode=WAL&_busy_timeout=5000&_foreign_keys=on"
+// Uses modernc.org/sqlite _pragma syntax.
+const DefaultPragmas = "?_pragma=journal_mode(WAL)&_pragma=busy_timeout(5000)&_pragma=foreign_keys(1)"
 
 // Migration represents a single numbered schema migration.
 type Migration struct {
