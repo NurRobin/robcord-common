@@ -22,6 +22,10 @@ const colors = {
 
   'border-subtle': 'var(--border-subtle)',
   'border-medium': 'var(--border-medium)',
+  'border-strong': 'var(--border-strong)',
+
+  'overlay-dim': 'var(--overlay-dim)',
+  'overlay-heavy': 'var(--overlay-heavy)',
 
   // Semantic aliases
   panel: 'var(--bg-elevated)',

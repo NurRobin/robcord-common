@@ -1,0 +1,227 @@
+syntax = "proto3";
+package robcord.bridge.v1;
+
+option go_package = "github.com/robcord/robcord-common/proto/bridgev1";
+
+import "google/protobuf/timestamp.proto";
+
+// WorkspaceLink is the single service replacing WS Bridge + Reverse Channel + Heartbeat.
+// The Workspace initiates all connections (outbound-only, NAT/CGNAT safe).
+service WorkspaceLinkService {
+  // EventStream: persistent bidirectional stream replacing WS Bridge.
+  // Workspace opens on startup, reconnects on failure.
+  // Multiplexes: session management, frame forwarding, bridge events, heartbeat, dispatch.
+  rpc EventStream(stream EventStreamRequest) returns (stream EventStreamResponse);
+
+  // Heartbeat: unary RPC replacing POST /api/heartbeat.
+  // Workspace calls periodically to report status.
+  // Can also be sent inline on the EventStream.
+  rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse);
+
+  // Token rotation is handled via BridgeEvent (TokenRotationRequested) +
+  // stream ack (TokenRotationAck), not as a separate RPC — the Zentrale
+  // initiates rotation but the Workspace is the gRPC client, so a unary
+  // RPC would require an unnecessary roundtrip.
+}
+
+// --- Stream Messages (multiplexed via oneof) ---
+
+// EventStreamRequest is sent by the Workspace on the EventStream.
+message EventStreamRequest {
+  oneof payload {
+    // Session management (WS Bridge replacement)
+    SessionOpenAck session_open_ack = 1;
+    SessionFrame session_frame = 2;
+    SessionClose session_close = 3;
+
+    // Keepalive
+    Pong pong = 10;
+
+    // Heartbeat (inline on stream, alternative to unary RPC)
+    HeartbeatRequest heartbeat = 11;
+
+    // Dispatch response (Workspace executed the HTTP request, here's the result)
+    HttpResponse dispatch_response = 12;
+
+    // Token rotation acknowledgement (response to TokenRotationRequestedEvent)
+    TokenRotationAck token_rotation_ack = 13;
+
+    // Cert renewal acknowledgement (response to CertRenewalEvent)
+    CertRenewalAck cert_renewal_ack = 14;
+  }
+}
+
+// EventStreamResponse is sent by the Zentrale on the EventStream.
+message EventStreamResponse {
+  oneof payload {
+    // Session management
+    SessionOpen session_open = 1;
+    SessionFrame session_frame = 2;
+    SessionClose session_close = 3;
+
+    // Bridge events (fire-and-forget, no ack needed)
+    BridgeEvent bridge_event = 5;
+
+    // Keepalive
+    Ping ping = 10;
+
+    // Dispatch (HTTP proxy request via stream)
+    DispatchRequest dispatch_request = 11;
+
+    // Heartbeat response (inline)
+    HeartbeatResponse heartbeat_response = 12;
+  }
+}
+
+// --- Session Messages (replacing WS Bridge ws_open/ws_frame/ws_close) ---
+
+// SessionOpen is sent by Zentrale to create a virtual browser WS session on the Workspace.
+message SessionOpen {
+  string session_id = 1;
+  string user_id = 2;
+  string username = 3;
+}
+
+// SessionOpenAck is sent by Workspace to confirm session creation.
+message SessionOpenAck {
+  string session_id = 1;
+  bool success = 2;
+  string error = 3;
+}
+
+// SessionFrame carries a single WebSocket frame between browser and Workspace.
+message SessionFrame {
+  string session_id = 1;
+  bytes data = 2;
+  bool is_text = 3;
+}
+
+// SessionClose terminates a virtual browser WS session.
+message SessionClose {
+  string session_id = 1;
+  int32 code = 2;
+  string reason = 3;
+}
+
+// --- Bridge Events (typed oneof + generic fallback) ---
+
+// BridgeEvent carries Zentrale-to-Workspace notifications.
+message BridgeEvent {
+  oneof event {
+    UserBannedEvent user_banned = 1;
+    UserUnbannedEvent user_unbanned = 2;
+    ConnectionModeChangedEvent connection_mode_changed = 3;
+    TokenRotationRequestedEvent token_rotation_requested = 4;
+    CertRenewalEvent cert_renewal = 5;
+
+    // Generic fallback for forward-compatible events the receiver doesn't know yet.
+    // The receiver logs the event_type and ignores the payload.
+    UnknownEvent unknown = 15;
+  }
+}
+
+message UserBannedEvent {
+  string user_id = 1;
+}
+
+message UserUnbannedEvent {
+  string user_id = 1;
+}
+
+message ConnectionModeChangedEvent {
+  string mode = 1;
+}
+
+// UnknownEvent is a forward-compatibility fallback for events added after a receiver's build.
+message UnknownEvent {
+  string event_type = 1;
+  bytes payload = 2;
+}
+
+// --- Keepalive ---
+
+message Ping {
+  google.protobuf.Timestamp sent_at = 1;
+}
+
+message Pong {
+  google.protobuf.Timestamp sent_at = 1;
+}
+
+// --- HTTP Dispatch (replacing Reverse Channel) ---
+
+// HttpRequest represents an HTTP request to be executed by the Workspace locally.
+message HttpRequest {
+  string request_id = 1;
+  string method = 2;
+  string path = 3;
+  string raw_query = 4;
+  map<string, string> headers = 5;
+  bytes body = 6;
+}
+
+// HttpResponse is the Workspace's response after executing the HTTP request.
+message HttpResponse {
+  string request_id = 1;
+  int32 status_code = 2;
+  map<string, string> headers = 3;
+  bytes body = 4;
+}
+
+// DispatchRequest wraps an HttpRequest for stream-based dispatch.
+message DispatchRequest {
+  HttpRequest request = 1;
+}
+
+// --- Heartbeat ---
+
+// HeartbeatRequest is sent by the Workspace to report its status.
+message HeartbeatRequest {
+  string workspace_url = 1;
+  string version = 2;
+  int64 uptime_seconds = 3;
+  int32 connected_clients = 4;
+  string connectivity_mode = 5;
+  int32 public_port = 6;
+  string public_url = 7;
+}
+
+// HeartbeatResponse is returned by the Zentrale with operational parameters.
+message HeartbeatResponse {
+  bool ok = 1;
+  string zentrale_url = 2;
+  string version = 3;
+  int32 interval_seconds = 4;
+}
+
+// --- Token Rotation (via BridgeEvent + stream ack, not unary RPC) ---
+
+// TokenRotationRequestedEvent is sent by the Zentrale to initiate token rotation.
+// The Workspace applies the new token and responds with TokenRotationAck.
+message TokenRotationRequestedEvent {
+  string new_token = 1;
+  int32 overlap_seconds = 2;
+}
+
+// TokenRotationAck confirms that the Workspace has applied the new token.
+message TokenRotationAck {
+  bool ok = 1;
+  int32 overlap_seconds = 2;
+}
+
+// --- Cert Renewal (auto-renewal when <20% lifetime remaining) ---
+
+// CertRenewalEvent is sent by the Zentrale when it detects the workspace's
+// client cert is nearing expiry. Contains a fresh cert+key signed by the CA.
+// The Workspace writes the new cert to disk and reconnects.
+message CertRenewalEvent {
+  string cert_pem = 1;  // new client certificate (PEM)
+  string key_pem = 2;   // new client private key (PEM)
+  string ca_pem = 3;    // CA cert (PEM, for verification — may be unchanged)
+}
+
+// CertRenewalAck confirms the Workspace has stored the new cert.
+message CertRenewalAck {
+  bool ok = 1;
+  string error = 2;
+}
