@@ -58,8 +58,23 @@ type Manifest struct {
 	// Voice tile config (for visual_tile plugins)
 	Tile *TileDef `json:"tile,omitempty"`
 
+	// Declarative hooks (simple event->condition->action rules)
+	DeclarativeHooks []DeclarativeHook `json:"declarative_hooks,omitempty"`
+
+	// Whitelisted network hosts the plugin's server script can call
+	NetworkHosts []string `json:"network_hosts,omitempty"`
+
 	// Webhook URLs for external backend (alternative to WASM)
 	WebhookURL string `json:"webhook_url,omitempty"`
+}
+
+// DeclarativeHook defines a simple event->condition->action rule.
+type DeclarativeHook struct {
+	Event     string `json:"event"`              // "message_created", "member_joined", etc.
+	Condition string `json:"condition"`           // "message.content starts_with '!ping'"
+	Action    string `json:"action"`              // "send_message", "add_reaction"
+	Template  string `json:"template"`            // "Pong! Response to {{message.author_name}}"
+	Channel   string `json:"channel,omitempty"`   // target channel (default: event's channel)
 }
 
 // SettingDef describes a single admin-configurable setting.
@@ -113,6 +128,24 @@ type TileDef struct {
 	MinParticipants  int    `json:"min_participants,omitempty"`
 }
 
+// validHookActions is the set of recognized declarative hook action types.
+var validHookActions = map[string]bool{
+	"send_message": true,
+	"add_reaction": true,
+}
+
+// validHookEvents is the set of recognized declarative hook event types.
+var validHookEvents = map[string]bool{
+	"message_created": true,
+	"member_joined":   true,
+	"member_left":     true,
+	"voice_joined":    true,
+	"voice_left":      true,
+}
+
+// hostnameRe validates a bare hostname (no scheme, no path, no port).
+var hostnameRe = regexp.MustCompile(`^([a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$`)
+
 // pluginIDRe validates plugin IDs: reverse-domain style (e.g. com.example.my-plugin).
 var pluginIDRe = regexp.MustCompile(`^[a-z][a-z0-9]*(\.[a-z][a-z0-9]*)*(-[a-z0-9]+)*$`)
 
@@ -132,6 +165,7 @@ var validPermissions = map[string]bool{
 	"webhook:receive":       true,
 	"messaging:participants": true,
 	"member:kick":           true,
+	"network:http":          true,
 }
 
 var validSettingTypes = map[string]bool{
@@ -218,6 +252,26 @@ func (m *Manifest) Validate() error {
 		}
 		if !validContextMenuActionTypes[e.Action.Type] {
 			return fmt.Errorf("manifest: context_menu_entries[%d].action.type %q must be open_url or webhook", i, e.Action.Type)
+		}
+	}
+
+	// Validate declarative hooks
+	for i, hook := range m.DeclarativeHooks {
+		if !validHookEvents[hook.Event] {
+			return fmt.Errorf("manifest: declarative_hooks[%d].event %q is not valid", i, hook.Event)
+		}
+		if !validHookActions[hook.Action] {
+			return fmt.Errorf("manifest: declarative_hooks[%d].action %q is not valid", i, hook.Action)
+		}
+		if hook.Action == "send_message" && hook.Template == "" {
+			return fmt.Errorf("manifest: declarative_hooks[%d] action send_message requires a non-empty template", i)
+		}
+	}
+
+	// Validate network hosts (must be valid hostnames, no schemes/paths/IPs)
+	for i, host := range m.NetworkHosts {
+		if !hostnameRe.MatchString(host) {
+			return fmt.Errorf("manifest: network_hosts[%d] %q is not a valid hostname (no scheme, path, or IP)", i, host)
 		}
 	}
 
