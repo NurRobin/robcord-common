@@ -1747,7 +1747,7 @@ const file_robcord_bridge_v1_bridge_proto_rawDesc = "" +
 	"\x05error\x18\x02 \x01(\tR\x05error2\xd0\x01\n" +
 	"\x14WorkspaceLinkService\x12`\n" +
 	"\vEventStream\x12%.robcord.bridge.v1.EventStreamRequest\x1a&.robcord.bridge.v1.EventStreamResponse(\x010\x01\x12V\n" +
-	"\tHeartbeat\x12#.robcord.bridge.v1.HeartbeatRequest\x1a$.robcord.bridge.v1.HeartbeatResponseB2Z0github.com/robcord/robcord-common/proto/bridgev1b\x06proto3"
+	"\tHeartbeat\x12#.robcord.bridge.v1.HeartbeatRequest\x1a$.robcord.bridge.v1.HeartbeatResponseB2Z0github.com/NurRobin/robcord-common/proto/bridgev1b\x06proto3"
 
 var (
 	file_robcord_bridge_v1_bridge_proto_rawDescOnce sync.Once
