@@ -61,6 +61,39 @@ type Manifest struct {
 	// Declarative hooks (simple event->condition->action rules)
 	DeclarativeHooks []DeclarativeHook `json:"declarative_hooks,omitempty"`
 
+	// Scheduled hooks (cron-triggered JS handlers)
+	ScheduledHooks []ScheduledHook `json:"scheduled_hooks,omitempty"`
+
+	// Chat "+" menu entries
+	PlusMenuEntries []PlusMenuEntry `json:"plus_menu_entries,omitempty"`
+
+	// Message hover action buttons
+	MessageActions []MessageAction `json:"message_actions,omitempty"`
+
+	// Input addon widgets (rendered above chat input)
+	InputAddons []InputAddon `json:"input_addons,omitempty"`
+
+	// Sidebar panels (rendered in member sidebar)
+	SidebarPanels []SidebarPanel `json:"sidebar_panels,omitempty"`
+
+	// Channel header widgets
+	HeaderWidgets []HeaderWidget `json:"header_widgets,omitempty"`
+
+	// Custom settings page
+	SettingsPage *SettingsPage `json:"settings_page,omitempty"`
+
+	// Voice dock buttons
+	DockButtons []DockButton `json:"dock_buttons,omitempty"`
+
+	// Structured form modals (rendered by the platform, not by plugin HTML)
+	Modals []ModalDef `json:"modals,omitempty"`
+
+	// Member status line (rich presence in member list)
+	StatusLine *StatusLineDef `json:"status_line,omitempty"`
+
+	// Member profile sections (shown in profile popover)
+	ProfileSections []ProfileSectionDef `json:"profile_sections,omitempty"`
+
 	// Whitelisted network hosts the plugin's server script can call
 	NetworkHosts []string `json:"network_hosts,omitempty"`
 
@@ -116,16 +149,126 @@ type ContextMenuAction struct {
 type CommandDef struct {
 	Name        string `json:"name"`
 	Description string `json:"description,omitempty"`
-	// Parameters could be added later for autocomplete
+	// Replacement is the text that replaces the /command when sent.
+	// If set, the workspace substitutes the command with this text before saving.
+	// Used for static text commands like /shrug → ¯\_(ツ)_/¯
+	Replacement string `json:"replacement,omitempty"`
 }
 
 // TileDef configures a visual_tile plugin's voice grid behavior.
 type TileDef struct {
-	NameplateIcon    string `json:"nameplate_icon,omitempty"`
-	DefaultState     string `json:"default_state,omitempty"` // "grid" (default)
-	SupportsFullscreen bool `json:"supports_fullscreen,omitempty"`
-	MaxParticipants  int    `json:"max_participants,omitempty"`
-	MinParticipants  int    `json:"min_participants,omitempty"`
+	NameplateIcon      string `json:"nameplate_icon,omitempty"`
+	DefaultState       string `json:"default_state,omitempty"` // "grid" (default)
+	SupportsFullscreen bool   `json:"supports_fullscreen,omitempty"`
+	MaxParticipants    int    `json:"max_participants,omitempty"`
+	MinParticipants    int    `json:"min_participants,omitempty"`
+	Mode               string `json:"mode,omitempty"` // "tile" (default) or "overlay"
+}
+
+// ScheduledHook defines a cron-triggered JS handler.
+type ScheduledHook struct {
+	Cron    string `json:"cron"`    // 5-field cron expression, e.g. "*/5 * * * *"
+	Handler string `json:"handler"` // JS function name to call
+}
+
+// PlusMenuEntry registers an item in the chat "+" menu.
+type PlusMenuEntry struct {
+	ID     string            `json:"id"`
+	Label  string            `json:"label"`
+	Icon   string            `json:"icon,omitempty"`
+	Action ContextMenuAction `json:"action"`
+}
+
+// MessageAction registers a hover button on chat messages.
+type MessageAction struct {
+	ID     string            `json:"id"`
+	Label  string            `json:"label"`
+	Icon   string            `json:"icon,omitempty"`
+	Action ContextMenuAction `json:"action"`
+}
+
+// InputAddon declares a widget rendered above the chat input field.
+type InputAddon struct {
+	ID     string `json:"id"`
+	Label  string `json:"label"`
+	Height int    `json:"height,omitempty"` // default 200px
+}
+
+// SidebarPanel declares a collapsible panel in the member sidebar.
+type SidebarPanel struct {
+	ID    string `json:"id"`
+	Title string `json:"title"`
+}
+
+// HeaderWidget declares a small widget in the channel header.
+type HeaderWidget struct {
+	ID     string `json:"id"`
+	Height int    `json:"height,omitempty"` // max 48px
+}
+
+// SettingsPage declares a custom settings page for the plugin.
+type SettingsPage struct {
+	Path  string `json:"path"`  // URL-safe slug
+	Title string `json:"title"` // display name in sidebar
+}
+
+// StatusLineDef declares how the plugin contributes to a member's status display.
+// The template is interpolated with the member's custom fields from this plugin.
+type StatusLineDef struct {
+	Template  string `json:"template"`            // e.g. "Spielt {{game_name}}"
+	Condition string `json:"condition,omitempty"`  // e.g. "game_name != null"
+	Icon      string `json:"icon,omitempty"`       // lucide icon name (e.g. "gamepad-2")
+	Color     string `json:"color,omitempty"`      // CSS color (e.g. "#2dd4bf")
+}
+
+// ProfileSectionDef declares a section in the member profile popover.
+type ProfileSectionDef struct {
+	ID       string              `json:"id"`
+	Title    string              `json:"title"`
+	Fields   []ProfileFieldDef   `json:"fields"`
+}
+
+// ProfileFieldDef is a single field shown in a profile section.
+type ProfileFieldDef struct {
+	Label    string `json:"label"`
+	Template string `json:"template"` // e.g. "{{steam_id}}" or a static URL template
+	URL      string `json:"url,omitempty"` // if set, field value is a clickable link
+}
+
+// ModalDef declares a structured form modal that the platform renders.
+// Plugins cannot inject arbitrary HTML — they declare fields, and we render
+// them with our UI components for consistency and security.
+type ModalDef struct {
+	ID           string       `json:"id"`
+	Title        string       `json:"title"`
+	Trigger      string       `json:"trigger,omitempty"`       // command that opens it (e.g. "!steam")
+	Fields       []ModalField `json:"fields"`
+	StatusField  string       `json:"status_field,omitempty"`  // custom field key shown as status
+	StatusLabels *struct {
+		Linked   string `json:"linked,omitempty"`
+		Unlinked string `json:"unlinked,omitempty"`
+	} `json:"status_labels,omitempty"`
+	SubmitLabel string `json:"submit_label,omitempty"` // default: "Speichern"
+	UnlinkLabel string `json:"unlink_label,omitempty"` // if set, shows an unlink/reset button
+	SubmitEvent string `json:"submit_event,omitempty"` // JS handler name (default: "onModalSubmit")
+}
+
+// ModalField describes a single input field in a plugin modal form.
+type ModalField struct {
+	Key         string `json:"key"`
+	Type        string `json:"type"` // "text", "number", "checkbox", "select"
+	Label       string `json:"label"`
+	Placeholder string `json:"placeholder,omitempty"`
+	Required    bool   `json:"required,omitempty"`
+	Description string `json:"description,omitempty"`
+}
+
+// DockButton registers a button in the voice call dock.
+type DockButton struct {
+	ID     string            `json:"id"`
+	Label  string            `json:"label"`
+	Icon   string            `json:"icon,omitempty"`
+	Action ContextMenuAction `json:"action"`
 }
 
 // validHookActions is the set of recognized declarative hook action types.
@@ -166,6 +309,8 @@ var validPermissions = map[string]bool{
 	"messaging:participants": true,
 	"member:kick":           true,
 	"network:http":          true,
+	"scheduled:run":         true,
+	"ui:modal":              true,
 }
 
 var validSettingTypes = map[string]bool{
@@ -278,6 +423,111 @@ func (m *Manifest) Validate() error {
 	// Validate tile config for visual_tile type
 	if m.Type == TypeVisualTile && m.Tile == nil {
 		return fmt.Errorf("manifest: visual_tile plugins must include a tile configuration")
+	}
+	if m.Tile != nil && m.Tile.Mode != "" && m.Tile.Mode != "tile" && m.Tile.Mode != "overlay" {
+		return fmt.Errorf("manifest: tile.mode must be \"tile\" or \"overlay\", got %q", m.Tile.Mode)
+	}
+
+	// Validate scheduled hooks
+	for i, sh := range m.ScheduledHooks {
+		if sh.Cron == "" {
+			return fmt.Errorf("manifest: scheduled_hooks[%d].cron is required", i)
+		}
+		if sh.Handler == "" {
+			return fmt.Errorf("manifest: scheduled_hooks[%d].handler is required", i)
+		}
+	}
+
+	// Validate plus menu entries
+	for i, e := range m.PlusMenuEntries {
+		if e.ID == "" {
+			return fmt.Errorf("manifest: plus_menu_entries[%d].id is required", i)
+		}
+		if e.Label == "" {
+			return fmt.Errorf("manifest: plus_menu_entries[%d].label is required", i)
+		}
+	}
+
+	// Validate message actions
+	for i, a := range m.MessageActions {
+		if a.ID == "" {
+			return fmt.Errorf("manifest: message_actions[%d].id is required", i)
+		}
+		if a.Label == "" {
+			return fmt.Errorf("manifest: message_actions[%d].label is required", i)
+		}
+	}
+
+	// Validate input addons
+	for i, a := range m.InputAddons {
+		if a.ID == "" {
+			return fmt.Errorf("manifest: input_addons[%d].id is required", i)
+		}
+		if a.Label == "" {
+			return fmt.Errorf("manifest: input_addons[%d].label is required", i)
+		}
+	}
+
+	// Validate sidebar panels
+	for i, p := range m.SidebarPanels {
+		if p.ID == "" {
+			return fmt.Errorf("manifest: sidebar_panels[%d].id is required", i)
+		}
+		if p.Title == "" {
+			return fmt.Errorf("manifest: sidebar_panels[%d].title is required", i)
+		}
+	}
+
+	// Validate header widgets
+	for i, w := range m.HeaderWidgets {
+		if w.ID == "" {
+			return fmt.Errorf("manifest: header_widgets[%d].id is required", i)
+		}
+	}
+
+	// Validate settings page
+	if m.SettingsPage != nil {
+		if m.SettingsPage.Path == "" {
+			return fmt.Errorf("manifest: settings_page.path is required")
+		}
+		if m.SettingsPage.Title == "" {
+			return fmt.Errorf("manifest: settings_page.title is required")
+		}
+	}
+
+	// Validate modals
+	validModalFieldTypes := map[string]bool{"text": true, "number": true, "checkbox": true, "select": true}
+	for i, modal := range m.Modals {
+		if modal.ID == "" {
+			return fmt.Errorf("manifest: modals[%d].id is required", i)
+		}
+		if modal.Title == "" {
+			return fmt.Errorf("manifest: modals[%d].title is required", i)
+		}
+		if len(modal.Fields) == 0 {
+			return fmt.Errorf("manifest: modals[%d].fields must not be empty", i)
+		}
+		for j, f := range modal.Fields {
+			if f.Key == "" {
+				return fmt.Errorf("manifest: modals[%d].fields[%d].key is required", i, j)
+			}
+			if !validModalFieldTypes[f.Type] {
+				return fmt.Errorf("manifest: modals[%d].fields[%d].type %q is not valid", i, j, f.Type)
+			}
+			if f.Label == "" {
+				return fmt.Errorf("manifest: modals[%d].fields[%d].label is required", i, j)
+			}
+		}
+	}
+
+	// Validate dock buttons
+	for i, b := range m.DockButtons {
+		if b.ID == "" {
+			return fmt.Errorf("manifest: dock_buttons[%d].id is required", i)
+		}
+		if b.Label == "" {
+			return fmt.Errorf("manifest: dock_buttons[%d].label is required", i)
+		}
 	}
 
 	return nil
