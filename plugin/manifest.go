@@ -37,6 +37,10 @@ type Manifest struct {
 	Author  string     `json:"author,omitempty"`
 	Type    PluginType `json:"type"`
 
+	// Readme is a Markdown-formatted description shown in the plugin's settings.
+	// Explains what the plugin does, how to configure it, and security guidance.
+	Readme string `json:"readme,omitempty"`
+
 	// Schema version (default 1 if omitted)
 	SchemaVersion int `json:"schema_version,omitempty"`
 
