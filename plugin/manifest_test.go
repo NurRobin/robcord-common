@@ -219,3 +219,130 @@ func TestNameTooLong(t *testing.T) {
 		t.Fatal("expected error for name > 64 chars")
 	}
 }
+
+func TestValidateNetworkHostsFromSettings(t *testing.T) {
+	m := &Manifest{
+		ID: "com.test.a", Name: "Test", Version: "1.0.0", Type: TypeBackgroundService,
+		Settings: []SettingDef{
+			{Key: "server_url", Type: "string", Label: "Server URL"},
+		},
+		NetworkHostsFromSettings: []string{"server_url"},
+	}
+	if err := m.Validate(); err != nil {
+		t.Fatalf("expected valid, got: %v", err)
+	}
+}
+
+func TestValidateNetworkHostsFromSettings_BadRef(t *testing.T) {
+	m := &Manifest{
+		ID: "com.test.a", Name: "Test", Version: "1.0.0", Type: TypeBackgroundService,
+		NetworkHostsFromSettings: []string{"nonexistent_key"},
+	}
+	if err := m.Validate(); err == nil {
+		t.Fatal("expected error for network_hosts_from_settings referencing undefined setting")
+	}
+}
+
+func TestValidateCustomPermissions(t *testing.T) {
+	m := &Manifest{
+		ID: "com.test.a", Name: "Test", Version: "1.0.0", Type: TypeBackgroundService,
+		CustomPermissions: []CustomPermissionDef{
+			{Key: "media:browse", Label: "Browse Media", Domain: "media"},
+			{Key: "media:start_session", Label: "Start Session", Domain: "media"},
+		},
+	}
+	if err := m.Validate(); err != nil {
+		t.Fatalf("expected valid custom permissions, got: %v", err)
+	}
+}
+
+func TestValidateCustomPermissions_BadKey(t *testing.T) {
+	tests := []CustomPermissionDef{
+		{Key: "", Label: "X", Domain: "x"},
+		{Key: "no-domain", Label: "X", Domain: "x"},
+		{Key: "UPPER:case", Label: "X", Domain: "x"},
+	}
+	for _, cp := range tests {
+		m := &Manifest{
+			ID: "com.test.a", Name: "Test", Version: "1.0.0", Type: TypeBackgroundService,
+			CustomPermissions: []CustomPermissionDef{cp},
+		}
+		if err := m.Validate(); err == nil {
+			t.Errorf("expected error for custom permission key %q", cp.Key)
+		}
+	}
+}
+
+func TestValidateRoutes(t *testing.T) {
+	m := &Manifest{
+		ID: "com.test.a", Name: "Test", Version: "1.0.0", Type: TypeBackgroundService,
+		CustomPermissions: []CustomPermissionDef{
+			{Key: "media:browse", Label: "Browse", Domain: "media"},
+		},
+		Routes: []RouteDef{
+			{Path: "libraries", Method: "GET", Handler: "onGetLibraries", Permission: "media:browse"},
+			{Path: "items/{id}", Method: "GET", Handler: "onGetItem"},
+		},
+	}
+	if err := m.Validate(); err != nil {
+		t.Fatalf("expected valid routes, got: %v", err)
+	}
+}
+
+func TestValidateRoutes_BadMethod(t *testing.T) {
+	m := &Manifest{
+		ID: "com.test.a", Name: "Test", Version: "1.0.0", Type: TypeBackgroundService,
+		Routes: []RouteDef{
+			{Path: "test", Method: "PATCH", Handler: "onTest"},
+		},
+	}
+	if err := m.Validate(); err == nil {
+		t.Fatal("expected error for invalid route method PATCH")
+	}
+}
+
+func TestValidateRoutes_UndefinedPermission(t *testing.T) {
+	m := &Manifest{
+		ID: "com.test.a", Name: "Test", Version: "1.0.0", Type: TypeBackgroundService,
+		Routes: []RouteDef{
+			{Path: "test", Method: "GET", Handler: "onTest", Permission: "undefined:perm"},
+		},
+	}
+	if err := m.Validate(); err == nil {
+		t.Fatal("expected error for route referencing undefined custom permission")
+	}
+}
+
+func TestParseManifestWithNewFields(t *testing.T) {
+	raw := `{
+		"id": "com.robcord.jellyfin",
+		"name": "Jellyfin",
+		"version": "1.0.0",
+		"type": "visual_tile",
+		"permissions": ["voice:tile", "network:http", "storage:secure", "routes:http"],
+		"tile": {"nameplate_icon": "film", "supports_fullscreen": true},
+		"settings": [
+			{"key": "jellyfin_url", "type": "string", "label": "Server URL"}
+		],
+		"network_hosts_from_settings": ["jellyfin_url"],
+		"custom_permissions": [
+			{"key": "media:browse", "label": "Browse Media", "domain": "media"}
+		],
+		"routes": [
+			{"path": "libraries", "method": "GET", "handler": "onGetLibraries", "permission": "media:browse"}
+		]
+	}`
+	m, err := ParseManifest([]byte(raw))
+	if err != nil {
+		t.Fatalf("expected valid parse, got: %v", err)
+	}
+	if len(m.NetworkHostsFromSettings) != 1 || m.NetworkHostsFromSettings[0] != "jellyfin_url" {
+		t.Errorf("unexpected network_hosts_from_settings: %v", m.NetworkHostsFromSettings)
+	}
+	if len(m.CustomPermissions) != 1 || m.CustomPermissions[0].Key != "media:browse" {
+		t.Errorf("unexpected custom_permissions: %v", m.CustomPermissions)
+	}
+	if len(m.Routes) != 1 || m.Routes[0].Handler != "onGetLibraries" {
+		t.Errorf("unexpected routes: %v", m.Routes)
+	}
+}
