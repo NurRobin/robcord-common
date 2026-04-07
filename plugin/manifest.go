@@ -355,10 +355,11 @@ var validRouteMethods = map[string]bool{
 var customPermKeyRe = regexp.MustCompile(`^[a-z][a-z0-9]*:[a-z][a-z0-9_]*$`)
 
 var validSettingTypes = map[string]bool{
-	"string":  true,
-	"number":  true,
-	"boolean": true,
-	"select":  true,
+	"string":   true,
+	"number":   true,
+	"boolean":  true,
+	"select":   true,
+	"password": true,
 }
 
 var validContextMenuTargets = map[string]bool{
