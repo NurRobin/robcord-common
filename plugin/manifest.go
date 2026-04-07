@@ -97,6 +97,19 @@ type Manifest struct {
 	// Whitelisted network hosts the plugin's server script can call
 	NetworkHosts []string `json:"network_hosts,omitempty"`
 
+	// Setting keys whose values (URLs/hostnames) are dynamically added to network_hosts.
+	// Enables user-configured hosts without hardcoding in the manifest.
+	// Example: ["jellyfin_url"] → the admin-configured Jellyfin URL becomes an allowed host.
+	NetworkHostsFromSettings []string `json:"network_hosts_from_settings,omitempty"`
+
+	// Custom permissions this plugin defines, integrated into the workspace RBAC system.
+	// Admins can assign these to roles. Plugin route handlers can require them.
+	CustomPermissions []CustomPermissionDef `json:"custom_permissions,omitempty"`
+
+	// HTTP routes the plugin exposes via /api/plugins/{id}/routes/{path}.
+	// Each route maps to a JS handler function in server/main.js.
+	Routes []RouteDef `json:"routes,omitempty"`
+
 	// Webhook URLs for external backend (alternative to WASM)
 	WebhookURL string `json:"webhook_url,omitempty"`
 }
@@ -271,6 +284,23 @@ type DockButton struct {
 	Action ContextMenuAction `json:"action"`
 }
 
+// CustomPermissionDef declares a permission that the plugin registers
+// in the workspace's RBAC system. Admins assign these to roles.
+type CustomPermissionDef struct {
+	Key    string `json:"key"`    // e.g. "media:browse", "media:start_session"
+	Label  string `json:"label"`  // Human-readable name, e.g. "Browse Media Library"
+	Domain string `json:"domain"` // Grouping domain, e.g. "media", "analytics"
+}
+
+// RouteDef declares an HTTP endpoint the plugin exposes.
+// Mounted at /api/plugins/{id}/routes/{path}.
+type RouteDef struct {
+	Path       string `json:"path"`                  // e.g. "libraries", "items/{itemId}"
+	Method     string `json:"method"`                // HTTP method: GET, POST, PUT, DELETE
+	Handler    string `json:"handler"`               // JS function name in server/main.js
+	Permission string `json:"permission,omitempty"`   // custom permission key required (empty = any member)
+}
+
 // validHookActions is the set of recognized declarative hook action types.
 var validHookActions = map[string]bool{
 	"send_message": true,
@@ -305,13 +335,24 @@ var validPermissions = map[string]bool{
 	"voice:overlay":         true,
 	"storage:plugin":        true,
 	"storage:custom_fields": true,
+	"storage:secure":        true,
 	"webhook:receive":       true,
 	"messaging:participants": true,
 	"member:kick":           true,
 	"network:http":          true,
 	"scheduled:run":         true,
 	"ui:modal":              true,
+	"plugin:ipc":            true,
+	"routes:http":           true,
 }
+
+// validRouteMethods is the set of valid HTTP methods for plugin routes.
+var validRouteMethods = map[string]bool{
+	"GET": true, "POST": true, "PUT": true, "DELETE": true,
+}
+
+// customPermKeyRe validates custom permission keys: domain:action format.
+var customPermKeyRe = regexp.MustCompile(`^[a-z][a-z0-9]*:[a-z][a-z0-9_]*$`)
 
 var validSettingTypes = map[string]bool{
 	"string":  true,
@@ -527,6 +568,62 @@ func (m *Manifest) Validate() error {
 		}
 		if b.Label == "" {
 			return fmt.Errorf("manifest: dock_buttons[%d].label is required", i)
+		}
+	}
+
+	// Validate network_hosts_from_settings (each must reference a defined setting key)
+	settingKeys := make(map[string]bool, len(m.Settings))
+	for _, s := range m.Settings {
+		settingKeys[s.Key] = true
+	}
+	for i, key := range m.NetworkHostsFromSettings {
+		if key == "" {
+			return fmt.Errorf("manifest: network_hosts_from_settings[%d] must not be empty", i)
+		}
+		if !settingKeys[key] {
+			return fmt.Errorf("manifest: network_hosts_from_settings[%d] %q does not reference a defined setting", i, key)
+		}
+	}
+
+	// Validate custom permissions
+	for i, cp := range m.CustomPermissions {
+		if cp.Key == "" {
+			return fmt.Errorf("manifest: custom_permissions[%d].key is required", i)
+		}
+		if !customPermKeyRe.MatchString(cp.Key) {
+			return fmt.Errorf("manifest: custom_permissions[%d].key %q must be domain:action format (e.g. media:browse)", i, cp.Key)
+		}
+		if cp.Label == "" {
+			return fmt.Errorf("manifest: custom_permissions[%d].label is required", i)
+		}
+		if cp.Domain == "" {
+			return fmt.Errorf("manifest: custom_permissions[%d].domain is required", i)
+		}
+	}
+
+	// Validate routes
+	for i, route := range m.Routes {
+		if route.Path == "" {
+			return fmt.Errorf("manifest: routes[%d].path is required", i)
+		}
+		if !validRouteMethods[route.Method] {
+			return fmt.Errorf("manifest: routes[%d].method %q must be GET, POST, PUT, or DELETE", i, route.Method)
+		}
+		if route.Handler == "" {
+			return fmt.Errorf("manifest: routes[%d].handler is required", i)
+		}
+		// If a route requires a permission, it must reference a defined custom permission
+		if route.Permission != "" {
+			found := false
+			for _, cp := range m.CustomPermissions {
+				if cp.Key == route.Permission {
+					found = true
+					break
+				}
+			}
+			if !found {
+				return fmt.Errorf("manifest: routes[%d].permission %q does not reference a defined custom_permissions entry", i, route.Permission)
+			}
 		}
 	}
 
