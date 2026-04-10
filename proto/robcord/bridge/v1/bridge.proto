@@ -192,6 +192,12 @@ message HeartbeatResponse {
   string zentrale_url = 2;
   string version = 3;
   int32 interval_seconds = 4;
+  // expected_connectivity_mode is the connectivity tier the zentrale has
+  // configured for this workspace. If non-empty and different from what the
+  // workspace reported, the workspace should update its local DB to match.
+  // This provides self-healing sync: even if a bridge event was lost, the
+  // workspace will converge within one heartbeat cycle (~30s).
+  string expected_connectivity_mode = 5;
 }
 
 // --- Token Rotation (via BridgeEvent + stream ack, not unary RPC) ---
