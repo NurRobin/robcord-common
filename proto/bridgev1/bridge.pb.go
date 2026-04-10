@@ -1340,8 +1340,14 @@ type HeartbeatResponse struct {
 	ZentraleUrl     string                 `protobuf:"bytes,2,opt,name=zentrale_url,json=zentraleUrl,proto3" json:"zentrale_url,omitempty"`
 	Version         string                 `protobuf:"bytes,3,opt,name=version,proto3" json:"version,omitempty"`
 	IntervalSeconds int32                  `protobuf:"varint,4,opt,name=interval_seconds,json=intervalSeconds,proto3" json:"interval_seconds,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	// expected_connectivity_mode is the connectivity tier the zentrale has
+	// configured for this workspace. If non-empty and different from what the
+	// workspace reported, the workspace should update its local DB to match.
+	// This provides self-healing sync: even if a bridge event was lost, the
+	// workspace will converge within one heartbeat cycle (~30s).
+	ExpectedConnectivityMode string `protobuf:"bytes,5,opt,name=expected_connectivity_mode,json=expectedConnectivityMode,proto3" json:"expected_connectivity_mode,omitempty"`
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
 }
 
 func (x *HeartbeatResponse) Reset() {
@@ -1400,6 +1406,13 @@ func (x *HeartbeatResponse) GetIntervalSeconds() int32 {
 		return x.IntervalSeconds
 	}
 	return 0
+}
+
+func (x *HeartbeatResponse) GetExpectedConnectivityMode() string {
+	if x != nil {
+		return x.ExpectedConnectivityMode
+	}
+	return ""
 }
 
 // TokenRotationRequestedEvent is sent by the Zentrale to initiate token rotation.
@@ -1726,12 +1739,13 @@ const file_robcord_bridge_v1_bridge_proto_rawDesc = "" +
 	"\vpublic_port\x18\x06 \x01(\x05R\n" +
 	"publicPort\x12\x1d\n" +
 	"\n" +
-	"public_url\x18\a \x01(\tR\tpublicUrl\"\x8b\x01\n" +
+	"public_url\x18\a \x01(\tR\tpublicUrl\"\xc9\x01\n" +
 	"\x11HeartbeatResponse\x12\x0e\n" +
 	"\x02ok\x18\x01 \x01(\bR\x02ok\x12!\n" +
 	"\fzentrale_url\x18\x02 \x01(\tR\vzentraleUrl\x12\x18\n" +
 	"\aversion\x18\x03 \x01(\tR\aversion\x12)\n" +
-	"\x10interval_seconds\x18\x04 \x01(\x05R\x0fintervalSeconds\"c\n" +
+	"\x10interval_seconds\x18\x04 \x01(\x05R\x0fintervalSeconds\x12<\n" +
+	"\x1aexpected_connectivity_mode\x18\x05 \x01(\tR\x18expectedConnectivityMode\"c\n" +
 	"\x1bTokenRotationRequestedEvent\x12\x1b\n" +
 	"\tnew_token\x18\x01 \x01(\tR\bnewToken\x12'\n" +
 	"\x0foverlap_seconds\x18\x02 \x01(\x05R\x0eoverlapSeconds\"K\n" +
@@ -1747,7 +1761,7 @@ const file_robcord_bridge_v1_bridge_proto_rawDesc = "" +
 	"\x05error\x18\x02 \x01(\tR\x05error2\xd0\x01\n" +
 	"\x14WorkspaceLinkService\x12`\n" +
 	"\vEventStream\x12%.robcord.bridge.v1.EventStreamRequest\x1a&.robcord.bridge.v1.EventStreamResponse(\x010\x01\x12V\n" +
-	"\tHeartbeat\x12#.robcord.bridge.v1.HeartbeatRequest\x1a$.robcord.bridge.v1.HeartbeatResponseB2Z0github.com/NurRobin/robcord-common/proto/bridgev1b\x06proto3"
+	"\tHeartbeat\x12#.robcord.bridge.v1.HeartbeatRequest\x1a$.robcord.bridge.v1.HeartbeatResponseB3Z1github.com/NurRobin/robcord-common/proto/bridgev1b\x06proto3"
 
 var (
 	file_robcord_bridge_v1_bridge_proto_rawDescOnce sync.Once
