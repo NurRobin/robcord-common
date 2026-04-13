@@ -9,5 +9,6 @@ type Claims struct {
 	Email       string `json:"email"`
 	Username    string `json:"username"`
 	DisplayName string `json:"display_name,omitempty"`
+	AvatarURL   string `json:"avatar_url,omitempty"`
 	IsAdmin     bool   `json:"is_admin,omitempty"`
 }
