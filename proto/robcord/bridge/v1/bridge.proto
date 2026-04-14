@@ -186,6 +186,15 @@ message HeartbeatRequest {
   string public_url = 7;
   // sfu_status reports the workspace's SFU reachability: "ok", "fail", "skipped", "not_configured".
   string sfu_status = 8;
+
+  // Address registry fields — explicit internal/external separation.
+  // internal_url: how the zentrale reaches this workspace (Docker hostname, LAN IP).
+  // Derived from os.Hostname() + API port, or WORKSPACE_INTERNAL_URL env.
+  string internal_url = 9;
+  // external_url: how clients reach this workspace directly (domain tier, e.g. https://ws.example.com).
+  string external_url = 10;
+  // external_ip: how clients reach this workspace via IP (auto_ip tier, e.g. http://91.43.228.45:7710).
+  string external_ip = 11;
 }
 
 // HeartbeatResponse is returned by the Zentrale with operational parameters.
