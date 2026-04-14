@@ -1253,11 +1253,8 @@ type HeartbeatRequest struct {
 	// sfu_status reports the workspace's SFU reachability: "ok", "fail", "skipped", "not_configured".
 	SfuStatus string `protobuf:"bytes,8,opt,name=sfu_status,json=sfuStatus,proto3" json:"sfu_status,omitempty"`
 	// Address registry fields — explicit internal/external separation.
-	// internal_url: how the zentrale reaches this workspace (Docker hostname, LAN IP).
-	InternalUrl string `protobuf:"bytes,9,opt,name=internal_url,json=internalUrl,proto3" json:"internal_url,omitempty"`
-	// external_url: how clients reach this workspace directly (domain tier).
-	ExternalUrl string `protobuf:"bytes,10,opt,name=external_url,json=externalUrl,proto3" json:"external_url,omitempty"`
-	// external_ip: how clients reach this workspace via IP (auto_ip tier).
+	InternalUrl   string `protobuf:"bytes,9,opt,name=internal_url,json=internalUrl,proto3" json:"internal_url,omitempty"`
+	ExternalUrl   string `protobuf:"bytes,10,opt,name=external_url,json=externalUrl,proto3" json:"external_url,omitempty"`
 	ExternalIp    string `protobuf:"bytes,11,opt,name=external_ip,json=externalIp,proto3" json:"external_ip,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

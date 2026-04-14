@@ -188,11 +188,8 @@ message HeartbeatRequest {
   string sfu_status = 8;
 
   // Address registry fields — explicit internal/external separation.
-  // internal_url: how the zentrale reaches this workspace (Docker hostname, LAN IP).
   string internal_url = 9;
-  // external_url: how clients reach this workspace directly (domain tier).
   string external_url = 10;
-  // external_ip: how clients reach this workspace via IP (auto_ip tier).
   string external_ip = 11;
 }
 
