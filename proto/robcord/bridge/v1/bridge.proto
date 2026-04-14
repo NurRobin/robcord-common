@@ -186,6 +186,11 @@ message HeartbeatRequest {
   string public_url = 7;
   // sfu_status reports the workspace's SFU reachability: "ok", "fail", "skipped", "not_configured".
   string sfu_status = 8;
+
+  // Address registry fields — explicit internal/external separation.
+  string internal_url = 9;
+  string external_url = 10;
+  string external_ip = 11;
 }
 
 // HeartbeatResponse is returned by the Zentrale with operational parameters.

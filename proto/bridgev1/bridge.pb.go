@@ -1251,7 +1251,11 @@ type HeartbeatRequest struct {
 	PublicPort       int32                  `protobuf:"varint,6,opt,name=public_port,json=publicPort,proto3" json:"public_port,omitempty"`
 	PublicUrl        string                 `protobuf:"bytes,7,opt,name=public_url,json=publicUrl,proto3" json:"public_url,omitempty"`
 	// sfu_status reports the workspace's SFU reachability: "ok", "fail", "skipped", "not_configured".
-	SfuStatus     string `protobuf:"bytes,8,opt,name=sfu_status,json=sfuStatus,proto3" json:"sfu_status,omitempty"`
+	SfuStatus string `protobuf:"bytes,8,opt,name=sfu_status,json=sfuStatus,proto3" json:"sfu_status,omitempty"`
+	// Address registry fields — explicit internal/external separation.
+	InternalUrl   string `protobuf:"bytes,9,opt,name=internal_url,json=internalUrl,proto3" json:"internal_url,omitempty"`
+	ExternalUrl   string `protobuf:"bytes,10,opt,name=external_url,json=externalUrl,proto3" json:"external_url,omitempty"`
+	ExternalIp    string `protobuf:"bytes,11,opt,name=external_ip,json=externalIp,proto3" json:"external_ip,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1338,6 +1342,27 @@ func (x *HeartbeatRequest) GetPublicUrl() string {
 func (x *HeartbeatRequest) GetSfuStatus() string {
 	if x != nil {
 		return x.SfuStatus
+	}
+	return ""
+}
+
+func (x *HeartbeatRequest) GetInternalUrl() string {
+	if x != nil {
+		return x.InternalUrl
+	}
+	return ""
+}
+
+func (x *HeartbeatRequest) GetExternalUrl() string {
+	if x != nil {
+		return x.ExternalUrl
+	}
+	return ""
+}
+
+func (x *HeartbeatRequest) GetExternalIp() string {
+	if x != nil {
+		return x.ExternalIp
 	}
 	return ""
 }
@@ -1738,7 +1763,7 @@ const file_robcord_bridge_v1_bridge_proto_rawDesc = "" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"K\n" +
 	"\x0fDispatchRequest\x128\n" +
-	"\arequest\x18\x01 \x01(\v2\x1e.robcord.bridge.v1.HttpRequestR\arequest\"\xb1\x02\n" +
+	"\arequest\x18\x01 \x01(\v2\x1e.robcord.bridge.v1.HttpRequestR\arequest\"\x98\x03\n" +
 	"\x10HeartbeatRequest\x12#\n" +
 	"\rworkspace_url\x18\x01 \x01(\tR\fworkspaceUrl\x12\x18\n" +
 	"\aversion\x18\x02 \x01(\tR\aversion\x12%\n" +
@@ -1750,7 +1775,12 @@ const file_robcord_bridge_v1_bridge_proto_rawDesc = "" +
 	"\n" +
 	"public_url\x18\a \x01(\tR\tpublicUrl\x12\x1d\n" +
 	"\n" +
-	"sfu_status\x18\b \x01(\tR\tsfuStatus\"\xc9\x01\n" +
+	"sfu_status\x18\b \x01(\tR\tsfuStatus\x12!\n" +
+	"\finternal_url\x18\t \x01(\tR\vinternalUrl\x12!\n" +
+	"\fexternal_url\x18\n" +
+	" \x01(\tR\vexternalUrl\x12\x1f\n" +
+	"\vexternal_ip\x18\v \x01(\tR\n" +
+	"externalIp\"\xc9\x01\n" +
 	"\x11HeartbeatResponse\x12\x0e\n" +
 	"\x02ok\x18\x01 \x01(\bR\x02ok\x12!\n" +
 	"\fzentrale_url\x18\x02 \x01(\tR\vzentraleUrl\x12\x18\n" +
