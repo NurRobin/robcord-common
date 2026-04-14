@@ -1250,8 +1250,17 @@ type HeartbeatRequest struct {
 	ConnectivityMode string                 `protobuf:"bytes,5,opt,name=connectivity_mode,json=connectivityMode,proto3" json:"connectivity_mode,omitempty"`
 	PublicPort       int32                  `protobuf:"varint,6,opt,name=public_port,json=publicPort,proto3" json:"public_port,omitempty"`
 	PublicUrl        string                 `protobuf:"bytes,7,opt,name=public_url,json=publicUrl,proto3" json:"public_url,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	// sfu_status reports the workspace's SFU reachability: "ok", "fail", "skipped", "not_configured".
+	SfuStatus string `protobuf:"bytes,8,opt,name=sfu_status,json=sfuStatus,proto3" json:"sfu_status,omitempty"`
+	// Address registry fields — explicit internal/external separation.
+	// internal_url: how the zentrale reaches this workspace (Docker hostname, LAN IP).
+	InternalUrl string `protobuf:"bytes,9,opt,name=internal_url,json=internalUrl,proto3" json:"internal_url,omitempty"`
+	// external_url: how clients reach this workspace directly (domain tier).
+	ExternalUrl string `protobuf:"bytes,10,opt,name=external_url,json=externalUrl,proto3" json:"external_url,omitempty"`
+	// external_ip: how clients reach this workspace via IP (auto_ip tier).
+	ExternalIp    string `protobuf:"bytes,11,opt,name=external_ip,json=externalIp,proto3" json:"external_ip,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *HeartbeatRequest) Reset() {
@@ -1333,6 +1342,34 @@ func (x *HeartbeatRequest) GetPublicUrl() string {
 	return ""
 }
 
+func (x *HeartbeatRequest) GetSfuStatus() string {
+	if x != nil {
+		return x.SfuStatus
+	}
+	return ""
+}
+
+func (x *HeartbeatRequest) GetInternalUrl() string {
+	if x != nil {
+		return x.InternalUrl
+	}
+	return ""
+}
+
+func (x *HeartbeatRequest) GetExternalUrl() string {
+	if x != nil {
+		return x.ExternalUrl
+	}
+	return ""
+}
+
+func (x *HeartbeatRequest) GetExternalIp() string {
+	if x != nil {
+		return x.ExternalIp
+	}
+	return ""
+}
+
 // HeartbeatResponse is returned by the Zentrale with operational parameters.
 type HeartbeatResponse struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
@@ -1340,8 +1377,14 @@ type HeartbeatResponse struct {
 	ZentraleUrl     string                 `protobuf:"bytes,2,opt,name=zentrale_url,json=zentraleUrl,proto3" json:"zentrale_url,omitempty"`
 	Version         string                 `protobuf:"bytes,3,opt,name=version,proto3" json:"version,omitempty"`
 	IntervalSeconds int32                  `protobuf:"varint,4,opt,name=interval_seconds,json=intervalSeconds,proto3" json:"interval_seconds,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	// expected_connectivity_mode is the connectivity tier the zentrale has
+	// configured for this workspace. If non-empty and different from what the
+	// workspace reported, the workspace should update its local DB to match.
+	// This provides self-healing sync: even if a bridge event was lost, the
+	// workspace will converge within one heartbeat cycle (~30s).
+	ExpectedConnectivityMode string `protobuf:"bytes,5,opt,name=expected_connectivity_mode,json=expectedConnectivityMode,proto3" json:"expected_connectivity_mode,omitempty"`
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
 }
 
 func (x *HeartbeatResponse) Reset() {
@@ -1400,6 +1443,13 @@ func (x *HeartbeatResponse) GetIntervalSeconds() int32 {
 		return x.IntervalSeconds
 	}
 	return 0
+}
+
+func (x *HeartbeatResponse) GetExpectedConnectivityMode() string {
+	if x != nil {
+		return x.ExpectedConnectivityMode
+	}
+	return ""
 }
 
 // TokenRotationRequestedEvent is sent by the Zentrale to initiate token rotation.
@@ -1716,7 +1766,7 @@ const file_robcord_bridge_v1_bridge_proto_rawDesc = "" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"K\n" +
 	"\x0fDispatchRequest\x128\n" +
-	"\arequest\x18\x01 \x01(\v2\x1e.robcord.bridge.v1.HttpRequestR\arequest\"\x92\x02\n" +
+	"\arequest\x18\x01 \x01(\v2\x1e.robcord.bridge.v1.HttpRequestR\arequest\"\x98\x03\n" +
 	"\x10HeartbeatRequest\x12#\n" +
 	"\rworkspace_url\x18\x01 \x01(\tR\fworkspaceUrl\x12\x18\n" +
 	"\aversion\x18\x02 \x01(\tR\aversion\x12%\n" +
@@ -1726,12 +1776,20 @@ const file_robcord_bridge_v1_bridge_proto_rawDesc = "" +
 	"\vpublic_port\x18\x06 \x01(\x05R\n" +
 	"publicPort\x12\x1d\n" +
 	"\n" +
-	"public_url\x18\a \x01(\tR\tpublicUrl\"\x8b\x01\n" +
+	"public_url\x18\a \x01(\tR\tpublicUrl\x12\x1d\n" +
+	"\n" +
+	"sfu_status\x18\b \x01(\tR\tsfuStatus\x12!\n" +
+	"\finternal_url\x18\t \x01(\tR\vinternalUrl\x12!\n" +
+	"\fexternal_url\x18\n" +
+	" \x01(\tR\vexternalUrl\x12\x1f\n" +
+	"\vexternal_ip\x18\v \x01(\tR\n" +
+	"externalIp\"\xc9\x01\n" +
 	"\x11HeartbeatResponse\x12\x0e\n" +
 	"\x02ok\x18\x01 \x01(\bR\x02ok\x12!\n" +
 	"\fzentrale_url\x18\x02 \x01(\tR\vzentraleUrl\x12\x18\n" +
 	"\aversion\x18\x03 \x01(\tR\aversion\x12)\n" +
-	"\x10interval_seconds\x18\x04 \x01(\x05R\x0fintervalSeconds\"c\n" +
+	"\x10interval_seconds\x18\x04 \x01(\x05R\x0fintervalSeconds\x12<\n" +
+	"\x1aexpected_connectivity_mode\x18\x05 \x01(\tR\x18expectedConnectivityMode\"c\n" +
 	"\x1bTokenRotationRequestedEvent\x12\x1b\n" +
 	"\tnew_token\x18\x01 \x01(\tR\bnewToken\x12'\n" +
 	"\x0foverlap_seconds\x18\x02 \x01(\x05R\x0eoverlapSeconds\"K\n" +
