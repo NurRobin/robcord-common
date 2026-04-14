@@ -184,6 +184,16 @@ message HeartbeatRequest {
   string connectivity_mode = 5;
   int32 public_port = 6;
   string public_url = 7;
+  // sfu_status reports the workspace's SFU reachability: "ok", "fail", "skipped", "not_configured".
+  string sfu_status = 8;
+
+  // Address registry fields — explicit internal/external separation.
+  // internal_url: how the zentrale reaches this workspace (Docker hostname, LAN IP).
+  string internal_url = 9;
+  // external_url: how clients reach this workspace directly (domain tier).
+  string external_url = 10;
+  // external_ip: how clients reach this workspace via IP (auto_ip tier).
+  string external_ip = 11;
 }
 
 // HeartbeatResponse is returned by the Zentrale with operational parameters.
@@ -192,6 +202,12 @@ message HeartbeatResponse {
   string zentrale_url = 2;
   string version = 3;
   int32 interval_seconds = 4;
+  // expected_connectivity_mode is the connectivity tier the zentrale has
+  // configured for this workspace. If non-empty and different from what the
+  // workspace reported, the workspace should update its local DB to match.
+  // This provides self-healing sync: even if a bridge event was lost, the
+  // workspace will converge within one heartbeat cycle (~30s).
+  string expected_connectivity_mode = 5;
 }
 
 // --- Token Rotation (via BridgeEvent + stream ack, not unary RPC) ---
