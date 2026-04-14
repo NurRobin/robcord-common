@@ -1,4 +1,4 @@
-module github.com/robcord/robcord-common
+module github.com/NurRobin/robcord-common
 
 go 1.26.0
 
