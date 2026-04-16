@@ -48,6 +48,10 @@ message EventStreamRequest {
 
     // Cert renewal acknowledgement (response to CertRenewalEvent)
     CertRenewalAck cert_renewal_ack = 14;
+
+    // Workspace broadcast: forward a WS hub event to all browser sessions.
+    // Used for message_created, channel_created, member_joined, etc.
+    WorkspaceBroadcast workspace_broadcast = 15;
   }
 }
 
@@ -101,6 +105,16 @@ message SessionClose {
   string session_id = 1;
   int32 code = 2;
   string reason = 3;
+}
+
+// --- Workspace Broadcast ---
+
+// WorkspaceBroadcast carries a WS hub event from the Workspace to all browser
+// sessions connected via the Zentrale. The payload is the raw JSON event frame
+// (e.g. {"type":"message_created","payload":{...}}).
+message WorkspaceBroadcast {
+  bytes data = 1;
+  bool is_text = 2;
 }
 
 // --- Bridge Events (typed oneof + generic fallback) ---

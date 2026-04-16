@@ -35,6 +35,7 @@ type EventStreamRequest struct {
 	//	*EventStreamRequest_DispatchResponse
 	//	*EventStreamRequest_TokenRotationAck
 	//	*EventStreamRequest_CertRenewalAck
+	//	*EventStreamRequest_WorkspaceBroadcast
 	Payload       isEventStreamRequest_Payload `protobuf_oneof:"payload"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -149,6 +150,15 @@ func (x *EventStreamRequest) GetCertRenewalAck() *CertRenewalAck {
 	return nil
 }
 
+func (x *EventStreamRequest) GetWorkspaceBroadcast() *WorkspaceBroadcast {
+	if x != nil {
+		if x, ok := x.Payload.(*EventStreamRequest_WorkspaceBroadcast); ok {
+			return x.WorkspaceBroadcast
+		}
+	}
+	return nil
+}
+
 type isEventStreamRequest_Payload interface {
 	isEventStreamRequest_Payload()
 }
@@ -191,6 +201,12 @@ type EventStreamRequest_CertRenewalAck struct {
 	CertRenewalAck *CertRenewalAck `protobuf:"bytes,14,opt,name=cert_renewal_ack,json=certRenewalAck,proto3,oneof"`
 }
 
+type EventStreamRequest_WorkspaceBroadcast struct {
+	// Workspace broadcast: forward a WS hub event to all browser sessions.
+	// Used for message_created, channel_created, member_joined, etc.
+	WorkspaceBroadcast *WorkspaceBroadcast `protobuf:"bytes,15,opt,name=workspace_broadcast,json=workspaceBroadcast,proto3,oneof"`
+}
+
 func (*EventStreamRequest_SessionOpenAck) isEventStreamRequest_Payload() {}
 
 func (*EventStreamRequest_SessionFrame) isEventStreamRequest_Payload() {}
@@ -206,6 +222,8 @@ func (*EventStreamRequest_DispatchResponse) isEventStreamRequest_Payload() {}
 func (*EventStreamRequest_TokenRotationAck) isEventStreamRequest_Payload() {}
 
 func (*EventStreamRequest_CertRenewalAck) isEventStreamRequest_Payload() {}
+
+func (*EventStreamRequest_WorkspaceBroadcast) isEventStreamRequest_Payload() {}
 
 // EventStreamResponse is sent by the Zentrale on the EventStream.
 type EventStreamResponse struct {
@@ -619,6 +637,61 @@ func (x *SessionClose) GetReason() string {
 	return ""
 }
 
+// WorkspaceBroadcast carries a WS hub event from the Workspace to all browser
+// sessions connected via the Zentrale. The payload is the raw JSON event frame
+// (e.g. {"type":"message_created","payload":{...}}).
+type WorkspaceBroadcast struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Data          []byte                 `protobuf:"bytes,1,opt,name=data,proto3" json:"data,omitempty"`
+	IsText        bool                   `protobuf:"varint,2,opt,name=is_text,json=isText,proto3" json:"is_text,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *WorkspaceBroadcast) Reset() {
+	*x = WorkspaceBroadcast{}
+	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *WorkspaceBroadcast) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*WorkspaceBroadcast) ProtoMessage() {}
+
+func (x *WorkspaceBroadcast) ProtoReflect() protoreflect.Message {
+	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use WorkspaceBroadcast.ProtoReflect.Descriptor instead.
+func (*WorkspaceBroadcast) Descriptor() ([]byte, []int) {
+	return file_robcord_bridge_v1_bridge_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *WorkspaceBroadcast) GetData() []byte {
+	if x != nil {
+		return x.Data
+	}
+	return nil
+}
+
+func (x *WorkspaceBroadcast) GetIsText() bool {
+	if x != nil {
+		return x.IsText
+	}
+	return false
+}
+
 // BridgeEvent carries Zentrale-to-Workspace notifications.
 type BridgeEvent struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -637,7 +710,7 @@ type BridgeEvent struct {
 
 func (x *BridgeEvent) Reset() {
 	*x = BridgeEvent{}
-	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[6]
+	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -649,7 +722,7 @@ func (x *BridgeEvent) String() string {
 func (*BridgeEvent) ProtoMessage() {}
 
 func (x *BridgeEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[6]
+	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -662,7 +735,7 @@ func (x *BridgeEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BridgeEvent.ProtoReflect.Descriptor instead.
 func (*BridgeEvent) Descriptor() ([]byte, []int) {
-	return file_robcord_bridge_v1_bridge_proto_rawDescGZIP(), []int{6}
+	return file_robcord_bridge_v1_bridge_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *BridgeEvent) GetEvent() isBridgeEvent_Event {
@@ -777,7 +850,7 @@ type UserBannedEvent struct {
 
 func (x *UserBannedEvent) Reset() {
 	*x = UserBannedEvent{}
-	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[7]
+	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -789,7 +862,7 @@ func (x *UserBannedEvent) String() string {
 func (*UserBannedEvent) ProtoMessage() {}
 
 func (x *UserBannedEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[7]
+	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -802,7 +875,7 @@ func (x *UserBannedEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UserBannedEvent.ProtoReflect.Descriptor instead.
 func (*UserBannedEvent) Descriptor() ([]byte, []int) {
-	return file_robcord_bridge_v1_bridge_proto_rawDescGZIP(), []int{7}
+	return file_robcord_bridge_v1_bridge_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *UserBannedEvent) GetUserId() string {
@@ -821,7 +894,7 @@ type UserUnbannedEvent struct {
 
 func (x *UserUnbannedEvent) Reset() {
 	*x = UserUnbannedEvent{}
-	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[8]
+	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -833,7 +906,7 @@ func (x *UserUnbannedEvent) String() string {
 func (*UserUnbannedEvent) ProtoMessage() {}
 
 func (x *UserUnbannedEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[8]
+	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -846,7 +919,7 @@ func (x *UserUnbannedEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UserUnbannedEvent.ProtoReflect.Descriptor instead.
 func (*UserUnbannedEvent) Descriptor() ([]byte, []int) {
-	return file_robcord_bridge_v1_bridge_proto_rawDescGZIP(), []int{8}
+	return file_robcord_bridge_v1_bridge_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *UserUnbannedEvent) GetUserId() string {
@@ -865,7 +938,7 @@ type ConnectionModeChangedEvent struct {
 
 func (x *ConnectionModeChangedEvent) Reset() {
 	*x = ConnectionModeChangedEvent{}
-	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[9]
+	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -877,7 +950,7 @@ func (x *ConnectionModeChangedEvent) String() string {
 func (*ConnectionModeChangedEvent) ProtoMessage() {}
 
 func (x *ConnectionModeChangedEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[9]
+	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -890,7 +963,7 @@ func (x *ConnectionModeChangedEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConnectionModeChangedEvent.ProtoReflect.Descriptor instead.
 func (*ConnectionModeChangedEvent) Descriptor() ([]byte, []int) {
-	return file_robcord_bridge_v1_bridge_proto_rawDescGZIP(), []int{9}
+	return file_robcord_bridge_v1_bridge_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *ConnectionModeChangedEvent) GetMode() string {
@@ -911,7 +984,7 @@ type UnknownEvent struct {
 
 func (x *UnknownEvent) Reset() {
 	*x = UnknownEvent{}
-	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[10]
+	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -923,7 +996,7 @@ func (x *UnknownEvent) String() string {
 func (*UnknownEvent) ProtoMessage() {}
 
 func (x *UnknownEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[10]
+	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -936,7 +1009,7 @@ func (x *UnknownEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UnknownEvent.ProtoReflect.Descriptor instead.
 func (*UnknownEvent) Descriptor() ([]byte, []int) {
-	return file_robcord_bridge_v1_bridge_proto_rawDescGZIP(), []int{10}
+	return file_robcord_bridge_v1_bridge_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *UnknownEvent) GetEventType() string {
@@ -962,7 +1035,7 @@ type Ping struct {
 
 func (x *Ping) Reset() {
 	*x = Ping{}
-	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[11]
+	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -974,7 +1047,7 @@ func (x *Ping) String() string {
 func (*Ping) ProtoMessage() {}
 
 func (x *Ping) ProtoReflect() protoreflect.Message {
-	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[11]
+	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -987,7 +1060,7 @@ func (x *Ping) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Ping.ProtoReflect.Descriptor instead.
 func (*Ping) Descriptor() ([]byte, []int) {
-	return file_robcord_bridge_v1_bridge_proto_rawDescGZIP(), []int{11}
+	return file_robcord_bridge_v1_bridge_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *Ping) GetSentAt() *timestamppb.Timestamp {
@@ -1006,7 +1079,7 @@ type Pong struct {
 
 func (x *Pong) Reset() {
 	*x = Pong{}
-	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[12]
+	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1018,7 +1091,7 @@ func (x *Pong) String() string {
 func (*Pong) ProtoMessage() {}
 
 func (x *Pong) ProtoReflect() protoreflect.Message {
-	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[12]
+	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1031,7 +1104,7 @@ func (x *Pong) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Pong.ProtoReflect.Descriptor instead.
 func (*Pong) Descriptor() ([]byte, []int) {
-	return file_robcord_bridge_v1_bridge_proto_rawDescGZIP(), []int{12}
+	return file_robcord_bridge_v1_bridge_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *Pong) GetSentAt() *timestamppb.Timestamp {
@@ -1056,7 +1129,7 @@ type HttpRequest struct {
 
 func (x *HttpRequest) Reset() {
 	*x = HttpRequest{}
-	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[13]
+	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1068,7 +1141,7 @@ func (x *HttpRequest) String() string {
 func (*HttpRequest) ProtoMessage() {}
 
 func (x *HttpRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[13]
+	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1081,7 +1154,7 @@ func (x *HttpRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HttpRequest.ProtoReflect.Descriptor instead.
 func (*HttpRequest) Descriptor() ([]byte, []int) {
-	return file_robcord_bridge_v1_bridge_proto_rawDescGZIP(), []int{13}
+	return file_robcord_bridge_v1_bridge_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *HttpRequest) GetRequestId() string {
@@ -1139,7 +1212,7 @@ type HttpResponse struct {
 
 func (x *HttpResponse) Reset() {
 	*x = HttpResponse{}
-	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[14]
+	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1151,7 +1224,7 @@ func (x *HttpResponse) String() string {
 func (*HttpResponse) ProtoMessage() {}
 
 func (x *HttpResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[14]
+	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1164,7 +1237,7 @@ func (x *HttpResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HttpResponse.ProtoReflect.Descriptor instead.
 func (*HttpResponse) Descriptor() ([]byte, []int) {
-	return file_robcord_bridge_v1_bridge_proto_rawDescGZIP(), []int{14}
+	return file_robcord_bridge_v1_bridge_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *HttpResponse) GetRequestId() string {
@@ -1205,7 +1278,7 @@ type DispatchRequest struct {
 
 func (x *DispatchRequest) Reset() {
 	*x = DispatchRequest{}
-	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[15]
+	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1217,7 +1290,7 @@ func (x *DispatchRequest) String() string {
 func (*DispatchRequest) ProtoMessage() {}
 
 func (x *DispatchRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[15]
+	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1230,7 +1303,7 @@ func (x *DispatchRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DispatchRequest.ProtoReflect.Descriptor instead.
 func (*DispatchRequest) Descriptor() ([]byte, []int) {
-	return file_robcord_bridge_v1_bridge_proto_rawDescGZIP(), []int{15}
+	return file_robcord_bridge_v1_bridge_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *DispatchRequest) GetRequest() *HttpRequest {
@@ -1262,7 +1335,7 @@ type HeartbeatRequest struct {
 
 func (x *HeartbeatRequest) Reset() {
 	*x = HeartbeatRequest{}
-	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[16]
+	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1274,7 +1347,7 @@ func (x *HeartbeatRequest) String() string {
 func (*HeartbeatRequest) ProtoMessage() {}
 
 func (x *HeartbeatRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[16]
+	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1287,7 +1360,7 @@ func (x *HeartbeatRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HeartbeatRequest.ProtoReflect.Descriptor instead.
 func (*HeartbeatRequest) Descriptor() ([]byte, []int) {
-	return file_robcord_bridge_v1_bridge_proto_rawDescGZIP(), []int{16}
+	return file_robcord_bridge_v1_bridge_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *HeartbeatRequest) GetWorkspaceUrl() string {
@@ -1386,7 +1459,7 @@ type HeartbeatResponse struct {
 
 func (x *HeartbeatResponse) Reset() {
 	*x = HeartbeatResponse{}
-	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[17]
+	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1398,7 +1471,7 @@ func (x *HeartbeatResponse) String() string {
 func (*HeartbeatResponse) ProtoMessage() {}
 
 func (x *HeartbeatResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[17]
+	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1411,7 +1484,7 @@ func (x *HeartbeatResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HeartbeatResponse.ProtoReflect.Descriptor instead.
 func (*HeartbeatResponse) Descriptor() ([]byte, []int) {
-	return file_robcord_bridge_v1_bridge_proto_rawDescGZIP(), []int{17}
+	return file_robcord_bridge_v1_bridge_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *HeartbeatResponse) GetOk() bool {
@@ -1461,7 +1534,7 @@ type TokenRotationRequestedEvent struct {
 
 func (x *TokenRotationRequestedEvent) Reset() {
 	*x = TokenRotationRequestedEvent{}
-	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[18]
+	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1473,7 +1546,7 @@ func (x *TokenRotationRequestedEvent) String() string {
 func (*TokenRotationRequestedEvent) ProtoMessage() {}
 
 func (x *TokenRotationRequestedEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[18]
+	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1486,7 +1559,7 @@ func (x *TokenRotationRequestedEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TokenRotationRequestedEvent.ProtoReflect.Descriptor instead.
 func (*TokenRotationRequestedEvent) Descriptor() ([]byte, []int) {
-	return file_robcord_bridge_v1_bridge_proto_rawDescGZIP(), []int{18}
+	return file_robcord_bridge_v1_bridge_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *TokenRotationRequestedEvent) GetNewToken() string {
@@ -1514,7 +1587,7 @@ type TokenRotationAck struct {
 
 func (x *TokenRotationAck) Reset() {
 	*x = TokenRotationAck{}
-	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[19]
+	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1526,7 +1599,7 @@ func (x *TokenRotationAck) String() string {
 func (*TokenRotationAck) ProtoMessage() {}
 
 func (x *TokenRotationAck) ProtoReflect() protoreflect.Message {
-	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[19]
+	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1539,7 +1612,7 @@ func (x *TokenRotationAck) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TokenRotationAck.ProtoReflect.Descriptor instead.
 func (*TokenRotationAck) Descriptor() ([]byte, []int) {
-	return file_robcord_bridge_v1_bridge_proto_rawDescGZIP(), []int{19}
+	return file_robcord_bridge_v1_bridge_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *TokenRotationAck) GetOk() bool {
@@ -1570,7 +1643,7 @@ type CertRenewalEvent struct {
 
 func (x *CertRenewalEvent) Reset() {
 	*x = CertRenewalEvent{}
-	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[20]
+	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1582,7 +1655,7 @@ func (x *CertRenewalEvent) String() string {
 func (*CertRenewalEvent) ProtoMessage() {}
 
 func (x *CertRenewalEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[20]
+	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1595,7 +1668,7 @@ func (x *CertRenewalEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CertRenewalEvent.ProtoReflect.Descriptor instead.
 func (*CertRenewalEvent) Descriptor() ([]byte, []int) {
-	return file_robcord_bridge_v1_bridge_proto_rawDescGZIP(), []int{20}
+	return file_robcord_bridge_v1_bridge_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *CertRenewalEvent) GetCertPem() string {
@@ -1630,7 +1703,7 @@ type CertRenewalAck struct {
 
 func (x *CertRenewalAck) Reset() {
 	*x = CertRenewalAck{}
-	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[21]
+	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1642,7 +1715,7 @@ func (x *CertRenewalAck) String() string {
 func (*CertRenewalAck) ProtoMessage() {}
 
 func (x *CertRenewalAck) ProtoReflect() protoreflect.Message {
-	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[21]
+	mi := &file_robcord_bridge_v1_bridge_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1655,7 +1728,7 @@ func (x *CertRenewalAck) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CertRenewalAck.ProtoReflect.Descriptor instead.
 func (*CertRenewalAck) Descriptor() ([]byte, []int) {
-	return file_robcord_bridge_v1_bridge_proto_rawDescGZIP(), []int{21}
+	return file_robcord_bridge_v1_bridge_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *CertRenewalAck) GetOk() bool {
@@ -1676,7 +1749,7 @@ var File_robcord_bridge_v1_bridge_proto protoreflect.FileDescriptor
 
 const file_robcord_bridge_v1_bridge_proto_rawDesc = "" +
 	"\n" +
-	"\x1erobcord/bridge/v1/bridge.proto\x12\x11robcord.bridge.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\xe6\x04\n" +
+	"\x1erobcord/bridge/v1/bridge.proto\x12\x11robcord.bridge.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\xc0\x05\n" +
 	"\x12EventStreamRequest\x12M\n" +
 	"\x10session_open_ack\x18\x01 \x01(\v2!.robcord.bridge.v1.SessionOpenAckH\x00R\x0esessionOpenAck\x12F\n" +
 	"\rsession_frame\x18\x02 \x01(\v2\x1f.robcord.bridge.v1.SessionFrameH\x00R\fsessionFrame\x12F\n" +
@@ -1686,7 +1759,8 @@ const file_robcord_bridge_v1_bridge_proto_rawDesc = "" +
 	"\theartbeat\x18\v \x01(\v2#.robcord.bridge.v1.HeartbeatRequestH\x00R\theartbeat\x12N\n" +
 	"\x11dispatch_response\x18\f \x01(\v2\x1f.robcord.bridge.v1.HttpResponseH\x00R\x10dispatchResponse\x12S\n" +
 	"\x12token_rotation_ack\x18\r \x01(\v2#.robcord.bridge.v1.TokenRotationAckH\x00R\x10tokenRotationAck\x12M\n" +
-	"\x10cert_renewal_ack\x18\x0e \x01(\v2!.robcord.bridge.v1.CertRenewalAckH\x00R\x0ecertRenewalAckB\t\n" +
+	"\x10cert_renewal_ack\x18\x0e \x01(\v2!.robcord.bridge.v1.CertRenewalAckH\x00R\x0ecertRenewalAck\x12X\n" +
+	"\x13workspace_broadcast\x18\x0f \x01(\v2%.robcord.bridge.v1.WorkspaceBroadcastH\x00R\x12workspaceBroadcastB\t\n" +
 	"\apayload\"\x91\x04\n" +
 	"\x13EventStreamResponse\x12C\n" +
 	"\fsession_open\x18\x01 \x01(\v2\x1e.robcord.bridge.v1.SessionOpenH\x00R\vsessionOpen\x12F\n" +
@@ -1717,7 +1791,10 @@ const file_robcord_bridge_v1_bridge_proto_rawDesc = "" +
 	"\n" +
 	"session_id\x18\x01 \x01(\tR\tsessionId\x12\x12\n" +
 	"\x04code\x18\x02 \x01(\x05R\x04code\x12\x16\n" +
-	"\x06reason\x18\x03 \x01(\tR\x06reason\"\x86\x04\n" +
+	"\x06reason\x18\x03 \x01(\tR\x06reason\"A\n" +
+	"\x12WorkspaceBroadcast\x12\x12\n" +
+	"\x04data\x18\x01 \x01(\fR\x04data\x12\x17\n" +
+	"\ais_text\x18\x02 \x01(\bR\x06isText\"\x86\x04\n" +
 	"\vBridgeEvent\x12E\n" +
 	"\vuser_banned\x18\x01 \x01(\v2\".robcord.bridge.v1.UserBannedEventH\x00R\n" +
 	"userBanned\x12K\n" +
@@ -1816,7 +1893,7 @@ func file_robcord_bridge_v1_bridge_proto_rawDescGZIP() []byte {
 	return file_robcord_bridge_v1_bridge_proto_rawDescData
 }
 
-var file_robcord_bridge_v1_bridge_proto_msgTypes = make([]protoimpl.MessageInfo, 24)
+var file_robcord_bridge_v1_bridge_proto_msgTypes = make([]protoimpl.MessageInfo, 25)
 var file_robcord_bridge_v1_bridge_proto_goTypes = []any{
 	(*EventStreamRequest)(nil),          // 0: robcord.bridge.v1.EventStreamRequest
 	(*EventStreamResponse)(nil),         // 1: robcord.bridge.v1.EventStreamResponse
@@ -1824,62 +1901,64 @@ var file_robcord_bridge_v1_bridge_proto_goTypes = []any{
 	(*SessionOpenAck)(nil),              // 3: robcord.bridge.v1.SessionOpenAck
 	(*SessionFrame)(nil),                // 4: robcord.bridge.v1.SessionFrame
 	(*SessionClose)(nil),                // 5: robcord.bridge.v1.SessionClose
-	(*BridgeEvent)(nil),                 // 6: robcord.bridge.v1.BridgeEvent
-	(*UserBannedEvent)(nil),             // 7: robcord.bridge.v1.UserBannedEvent
-	(*UserUnbannedEvent)(nil),           // 8: robcord.bridge.v1.UserUnbannedEvent
-	(*ConnectionModeChangedEvent)(nil),  // 9: robcord.bridge.v1.ConnectionModeChangedEvent
-	(*UnknownEvent)(nil),                // 10: robcord.bridge.v1.UnknownEvent
-	(*Ping)(nil),                        // 11: robcord.bridge.v1.Ping
-	(*Pong)(nil),                        // 12: robcord.bridge.v1.Pong
-	(*HttpRequest)(nil),                 // 13: robcord.bridge.v1.HttpRequest
-	(*HttpResponse)(nil),                // 14: robcord.bridge.v1.HttpResponse
-	(*DispatchRequest)(nil),             // 15: robcord.bridge.v1.DispatchRequest
-	(*HeartbeatRequest)(nil),            // 16: robcord.bridge.v1.HeartbeatRequest
-	(*HeartbeatResponse)(nil),           // 17: robcord.bridge.v1.HeartbeatResponse
-	(*TokenRotationRequestedEvent)(nil), // 18: robcord.bridge.v1.TokenRotationRequestedEvent
-	(*TokenRotationAck)(nil),            // 19: robcord.bridge.v1.TokenRotationAck
-	(*CertRenewalEvent)(nil),            // 20: robcord.bridge.v1.CertRenewalEvent
-	(*CertRenewalAck)(nil),              // 21: robcord.bridge.v1.CertRenewalAck
-	nil,                                 // 22: robcord.bridge.v1.HttpRequest.HeadersEntry
-	nil,                                 // 23: robcord.bridge.v1.HttpResponse.HeadersEntry
-	(*timestamppb.Timestamp)(nil),       // 24: google.protobuf.Timestamp
+	(*WorkspaceBroadcast)(nil),          // 6: robcord.bridge.v1.WorkspaceBroadcast
+	(*BridgeEvent)(nil),                 // 7: robcord.bridge.v1.BridgeEvent
+	(*UserBannedEvent)(nil),             // 8: robcord.bridge.v1.UserBannedEvent
+	(*UserUnbannedEvent)(nil),           // 9: robcord.bridge.v1.UserUnbannedEvent
+	(*ConnectionModeChangedEvent)(nil),  // 10: robcord.bridge.v1.ConnectionModeChangedEvent
+	(*UnknownEvent)(nil),                // 11: robcord.bridge.v1.UnknownEvent
+	(*Ping)(nil),                        // 12: robcord.bridge.v1.Ping
+	(*Pong)(nil),                        // 13: robcord.bridge.v1.Pong
+	(*HttpRequest)(nil),                 // 14: robcord.bridge.v1.HttpRequest
+	(*HttpResponse)(nil),                // 15: robcord.bridge.v1.HttpResponse
+	(*DispatchRequest)(nil),             // 16: robcord.bridge.v1.DispatchRequest
+	(*HeartbeatRequest)(nil),            // 17: robcord.bridge.v1.HeartbeatRequest
+	(*HeartbeatResponse)(nil),           // 18: robcord.bridge.v1.HeartbeatResponse
+	(*TokenRotationRequestedEvent)(nil), // 19: robcord.bridge.v1.TokenRotationRequestedEvent
+	(*TokenRotationAck)(nil),            // 20: robcord.bridge.v1.TokenRotationAck
+	(*CertRenewalEvent)(nil),            // 21: robcord.bridge.v1.CertRenewalEvent
+	(*CertRenewalAck)(nil),              // 22: robcord.bridge.v1.CertRenewalAck
+	nil,                                 // 23: robcord.bridge.v1.HttpRequest.HeadersEntry
+	nil,                                 // 24: robcord.bridge.v1.HttpResponse.HeadersEntry
+	(*timestamppb.Timestamp)(nil),       // 25: google.protobuf.Timestamp
 }
 var file_robcord_bridge_v1_bridge_proto_depIdxs = []int32{
 	3,  // 0: robcord.bridge.v1.EventStreamRequest.session_open_ack:type_name -> robcord.bridge.v1.SessionOpenAck
 	4,  // 1: robcord.bridge.v1.EventStreamRequest.session_frame:type_name -> robcord.bridge.v1.SessionFrame
 	5,  // 2: robcord.bridge.v1.EventStreamRequest.session_close:type_name -> robcord.bridge.v1.SessionClose
-	12, // 3: robcord.bridge.v1.EventStreamRequest.pong:type_name -> robcord.bridge.v1.Pong
-	16, // 4: robcord.bridge.v1.EventStreamRequest.heartbeat:type_name -> robcord.bridge.v1.HeartbeatRequest
-	14, // 5: robcord.bridge.v1.EventStreamRequest.dispatch_response:type_name -> robcord.bridge.v1.HttpResponse
-	19, // 6: robcord.bridge.v1.EventStreamRequest.token_rotation_ack:type_name -> robcord.bridge.v1.TokenRotationAck
-	21, // 7: robcord.bridge.v1.EventStreamRequest.cert_renewal_ack:type_name -> robcord.bridge.v1.CertRenewalAck
-	2,  // 8: robcord.bridge.v1.EventStreamResponse.session_open:type_name -> robcord.bridge.v1.SessionOpen
-	4,  // 9: robcord.bridge.v1.EventStreamResponse.session_frame:type_name -> robcord.bridge.v1.SessionFrame
-	5,  // 10: robcord.bridge.v1.EventStreamResponse.session_close:type_name -> robcord.bridge.v1.SessionClose
-	6,  // 11: robcord.bridge.v1.EventStreamResponse.bridge_event:type_name -> robcord.bridge.v1.BridgeEvent
-	11, // 12: robcord.bridge.v1.EventStreamResponse.ping:type_name -> robcord.bridge.v1.Ping
-	15, // 13: robcord.bridge.v1.EventStreamResponse.dispatch_request:type_name -> robcord.bridge.v1.DispatchRequest
-	17, // 14: robcord.bridge.v1.EventStreamResponse.heartbeat_response:type_name -> robcord.bridge.v1.HeartbeatResponse
-	7,  // 15: robcord.bridge.v1.BridgeEvent.user_banned:type_name -> robcord.bridge.v1.UserBannedEvent
-	8,  // 16: robcord.bridge.v1.BridgeEvent.user_unbanned:type_name -> robcord.bridge.v1.UserUnbannedEvent
-	9,  // 17: robcord.bridge.v1.BridgeEvent.connection_mode_changed:type_name -> robcord.bridge.v1.ConnectionModeChangedEvent
-	18, // 18: robcord.bridge.v1.BridgeEvent.token_rotation_requested:type_name -> robcord.bridge.v1.TokenRotationRequestedEvent
-	20, // 19: robcord.bridge.v1.BridgeEvent.cert_renewal:type_name -> robcord.bridge.v1.CertRenewalEvent
-	10, // 20: robcord.bridge.v1.BridgeEvent.unknown:type_name -> robcord.bridge.v1.UnknownEvent
-	24, // 21: robcord.bridge.v1.Ping.sent_at:type_name -> google.protobuf.Timestamp
-	24, // 22: robcord.bridge.v1.Pong.sent_at:type_name -> google.protobuf.Timestamp
-	22, // 23: robcord.bridge.v1.HttpRequest.headers:type_name -> robcord.bridge.v1.HttpRequest.HeadersEntry
-	23, // 24: robcord.bridge.v1.HttpResponse.headers:type_name -> robcord.bridge.v1.HttpResponse.HeadersEntry
-	13, // 25: robcord.bridge.v1.DispatchRequest.request:type_name -> robcord.bridge.v1.HttpRequest
-	0,  // 26: robcord.bridge.v1.WorkspaceLinkService.EventStream:input_type -> robcord.bridge.v1.EventStreamRequest
-	16, // 27: robcord.bridge.v1.WorkspaceLinkService.Heartbeat:input_type -> robcord.bridge.v1.HeartbeatRequest
-	1,  // 28: robcord.bridge.v1.WorkspaceLinkService.EventStream:output_type -> robcord.bridge.v1.EventStreamResponse
-	17, // 29: robcord.bridge.v1.WorkspaceLinkService.Heartbeat:output_type -> robcord.bridge.v1.HeartbeatResponse
-	28, // [28:30] is the sub-list for method output_type
-	26, // [26:28] is the sub-list for method input_type
-	26, // [26:26] is the sub-list for extension type_name
-	26, // [26:26] is the sub-list for extension extendee
-	0,  // [0:26] is the sub-list for field type_name
+	13, // 3: robcord.bridge.v1.EventStreamRequest.pong:type_name -> robcord.bridge.v1.Pong
+	17, // 4: robcord.bridge.v1.EventStreamRequest.heartbeat:type_name -> robcord.bridge.v1.HeartbeatRequest
+	15, // 5: robcord.bridge.v1.EventStreamRequest.dispatch_response:type_name -> robcord.bridge.v1.HttpResponse
+	20, // 6: robcord.bridge.v1.EventStreamRequest.token_rotation_ack:type_name -> robcord.bridge.v1.TokenRotationAck
+	22, // 7: robcord.bridge.v1.EventStreamRequest.cert_renewal_ack:type_name -> robcord.bridge.v1.CertRenewalAck
+	6,  // 8: robcord.bridge.v1.EventStreamRequest.workspace_broadcast:type_name -> robcord.bridge.v1.WorkspaceBroadcast
+	2,  // 9: robcord.bridge.v1.EventStreamResponse.session_open:type_name -> robcord.bridge.v1.SessionOpen
+	4,  // 10: robcord.bridge.v1.EventStreamResponse.session_frame:type_name -> robcord.bridge.v1.SessionFrame
+	5,  // 11: robcord.bridge.v1.EventStreamResponse.session_close:type_name -> robcord.bridge.v1.SessionClose
+	7,  // 12: robcord.bridge.v1.EventStreamResponse.bridge_event:type_name -> robcord.bridge.v1.BridgeEvent
+	12, // 13: robcord.bridge.v1.EventStreamResponse.ping:type_name -> robcord.bridge.v1.Ping
+	16, // 14: robcord.bridge.v1.EventStreamResponse.dispatch_request:type_name -> robcord.bridge.v1.DispatchRequest
+	18, // 15: robcord.bridge.v1.EventStreamResponse.heartbeat_response:type_name -> robcord.bridge.v1.HeartbeatResponse
+	8,  // 16: robcord.bridge.v1.BridgeEvent.user_banned:type_name -> robcord.bridge.v1.UserBannedEvent
+	9,  // 17: robcord.bridge.v1.BridgeEvent.user_unbanned:type_name -> robcord.bridge.v1.UserUnbannedEvent
+	10, // 18: robcord.bridge.v1.BridgeEvent.connection_mode_changed:type_name -> robcord.bridge.v1.ConnectionModeChangedEvent
+	19, // 19: robcord.bridge.v1.BridgeEvent.token_rotation_requested:type_name -> robcord.bridge.v1.TokenRotationRequestedEvent
+	21, // 20: robcord.bridge.v1.BridgeEvent.cert_renewal:type_name -> robcord.bridge.v1.CertRenewalEvent
+	11, // 21: robcord.bridge.v1.BridgeEvent.unknown:type_name -> robcord.bridge.v1.UnknownEvent
+	25, // 22: robcord.bridge.v1.Ping.sent_at:type_name -> google.protobuf.Timestamp
+	25, // 23: robcord.bridge.v1.Pong.sent_at:type_name -> google.protobuf.Timestamp
+	23, // 24: robcord.bridge.v1.HttpRequest.headers:type_name -> robcord.bridge.v1.HttpRequest.HeadersEntry
+	24, // 25: robcord.bridge.v1.HttpResponse.headers:type_name -> robcord.bridge.v1.HttpResponse.HeadersEntry
+	14, // 26: robcord.bridge.v1.DispatchRequest.request:type_name -> robcord.bridge.v1.HttpRequest
+	0,  // 27: robcord.bridge.v1.WorkspaceLinkService.EventStream:input_type -> robcord.bridge.v1.EventStreamRequest
+	17, // 28: robcord.bridge.v1.WorkspaceLinkService.Heartbeat:input_type -> robcord.bridge.v1.HeartbeatRequest
+	1,  // 29: robcord.bridge.v1.WorkspaceLinkService.EventStream:output_type -> robcord.bridge.v1.EventStreamResponse
+	18, // 30: robcord.bridge.v1.WorkspaceLinkService.Heartbeat:output_type -> robcord.bridge.v1.HeartbeatResponse
+	29, // [29:31] is the sub-list for method output_type
+	27, // [27:29] is the sub-list for method input_type
+	27, // [27:27] is the sub-list for extension type_name
+	27, // [27:27] is the sub-list for extension extendee
+	0,  // [0:27] is the sub-list for field type_name
 }
 
 func init() { file_robcord_bridge_v1_bridge_proto_init() }
@@ -1896,6 +1975,7 @@ func file_robcord_bridge_v1_bridge_proto_init() {
 		(*EventStreamRequest_DispatchResponse)(nil),
 		(*EventStreamRequest_TokenRotationAck)(nil),
 		(*EventStreamRequest_CertRenewalAck)(nil),
+		(*EventStreamRequest_WorkspaceBroadcast)(nil),
 	}
 	file_robcord_bridge_v1_bridge_proto_msgTypes[1].OneofWrappers = []any{
 		(*EventStreamResponse_SessionOpen)(nil),
@@ -1906,7 +1986,7 @@ func file_robcord_bridge_v1_bridge_proto_init() {
 		(*EventStreamResponse_DispatchRequest)(nil),
 		(*EventStreamResponse_HeartbeatResponse)(nil),
 	}
-	file_robcord_bridge_v1_bridge_proto_msgTypes[6].OneofWrappers = []any{
+	file_robcord_bridge_v1_bridge_proto_msgTypes[7].OneofWrappers = []any{
 		(*BridgeEvent_UserBanned)(nil),
 		(*BridgeEvent_UserUnbanned)(nil),
 		(*BridgeEvent_ConnectionModeChanged)(nil),
@@ -1920,7 +2000,7 @@ func file_robcord_bridge_v1_bridge_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_robcord_bridge_v1_bridge_proto_rawDesc), len(file_robcord_bridge_v1_bridge_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   24,
+			NumMessages:   25,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
