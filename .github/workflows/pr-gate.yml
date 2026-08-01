@@ -1,0 +1,19 @@
+name: PR Gate
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  check-source-branch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify PR source branch
+        run: |
+          branch="${{ github.head_ref }}"
+          if [[ "$branch" == "dev" || "$branch" == patch/* ]]; then
+            echo "PR from '$branch' → main: allowed"
+          else
+            echo "::error::PRs to main must come from 'dev' or 'patch/*' branches, not '$branch'"
+            exit 1
+          fi

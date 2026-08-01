@@ -290,6 +290,12 @@ type CustomPermissionDef struct {
 	Key    string `json:"key"`    // e.g. "media:browse", "media:start_session"
 	Label  string `json:"label"`  // Human-readable name, e.g. "Browse Media Library"
 	Domain string `json:"domain"` // Grouping domain, e.g. "media", "analytics"
+	// DefaultGrant, when true, asks the host to grant this permission to the
+	// default role (@everyone) on first install so the plugin's baseline
+	// experience works out of the box. Reserve it for low-risk, broadly-safe
+	// permissions (e.g. passive "watch along"); privileged actions should stay
+	// opt-in. The host can revoke it afterwards.
+	DefaultGrant bool `json:"default_grant,omitempty"`
 }
 
 // RouteDef declares an HTTP endpoint the plugin exposes.
