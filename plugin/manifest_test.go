@@ -163,6 +163,40 @@ func TestValidateContextMenuEntry(t *testing.T) {
 	}
 }
 
+func TestValidateRejectsNonHTTPManifestURLs(t *testing.T) {
+	base := func() *Manifest {
+		return &Manifest{ID: "com.test.urls", Name: "URLs", Version: "1.0.0", Type: TypeBackgroundService}
+	}
+
+	tests := []struct {
+		name   string
+		mutate func(*Manifest)
+	}{
+		{"plugin webhook", func(m *Manifest) { m.WebhookURL = "file:///etc/passwd" }},
+		{"context open URL", func(m *Manifest) {
+			m.ContextMenuEntries = []ContextMenuEntry{{ID: "x", Target: "member", Label: "X", Action: ContextMenuAction{Type: "open_url", URLTemplate: "javascript:alert(1)"}}}
+		}},
+		{"context webhook", func(m *Manifest) {
+			m.ContextMenuEntries = []ContextMenuEntry{{ID: "x", Target: "member", Label: "X", Action: ContextMenuAction{Type: "webhook", WebhookURL: "gopher://internal"}}}
+		}},
+		{"profile link", func(m *Manifest) {
+			m.ProfileSections = []ProfileSectionDef{{ID: "p", Title: "P", Fields: []ProfileFieldDef{{Label: "L", Template: "x", URL: "data:text/html,x"}}}}
+		}},
+		{"dock button", func(m *Manifest) {
+			m.DockButtons = []DockButton{{ID: "d", Label: "D", Action: ContextMenuAction{Type: "open_url", URLTemplate: "javascript:alert(1)"}}}
+		}},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			manifest := base()
+			tc.mutate(manifest)
+			if err := manifest.Validate(); err == nil {
+				t.Fatal("expected non-http(s) URL to be rejected")
+			}
+		})
+	}
+}
+
 func TestValidateContextMenuBadTarget(t *testing.T) {
 	m := &Manifest{
 		ID:      "com.test.a",
