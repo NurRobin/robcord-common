@@ -3,6 +3,7 @@ package plugin
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"regexp"
 	"strings"
 )
@@ -14,10 +15,10 @@ const SchemaVersion = 1
 type PluginType string
 
 const (
-	TypeVisualTile       PluginType = "visual_tile"
-	TypeChatExtension    PluginType = "chat_extension"
+	TypeVisualTile        PluginType = "visual_tile"
+	TypeChatExtension     PluginType = "chat_extension"
 	TypeBackgroundService PluginType = "background_service"
-	TypeContextMenu      PluginType = "context_menu"
+	TypeContextMenu       PluginType = "context_menu"
 )
 
 var validTypes = map[PluginType]bool{
@@ -25,6 +26,25 @@ var validTypes = map[PluginType]bool{
 	TypeChatExtension:     true,
 	TypeBackgroundService: true,
 	TypeContextMenu:       true,
+}
+
+func validateHTTPURL(raw string) bool {
+	u, err := url.Parse(strings.TrimSpace(raw))
+	return err == nil && (u.Scheme == "https" || u.Scheme == "http") && u.Host != "" && u.User == nil
+}
+
+func validateManifestAction(action ContextMenuAction) error {
+	switch action.Type {
+	case "open_url":
+		if !validateHTTPURL(action.URLTemplate) {
+			return fmt.Errorf("open_url requires an http(s) url_template")
+		}
+	case "webhook":
+		if !validateHTTPURL(action.WebhookURL) {
+			return fmt.Errorf("webhook requires an http(s) webhook_url")
+		}
+	}
+	return nil
 }
 
 // Manifest describes a plugin's identity, capabilities, and configuration.
@@ -116,11 +136,11 @@ type Manifest struct {
 
 // DeclarativeHook defines a simple event->condition->action rule.
 type DeclarativeHook struct {
-	Event     string `json:"event"`              // "message_created", "member_joined", etc.
-	Condition string `json:"condition"`           // "message.content starts_with '!ping'"
-	Action    string `json:"action"`              // "send_message", "add_reaction"
-	Template  string `json:"template"`            // "Pong! Response to {{message.author_name}}"
-	Channel   string `json:"channel,omitempty"`   // target channel (default: event's channel)
+	Event     string `json:"event"`             // "message_created", "member_joined", etc.
+	Condition string `json:"condition"`         // "message.content starts_with '!ping'"
+	Action    string `json:"action"`            // "send_message", "add_reaction"
+	Template  string `json:"template"`          // "Pong! Response to {{message.author_name}}"
+	Channel   string `json:"channel,omitempty"` // target channel (default: event's channel)
 }
 
 // SettingDef describes a single admin-configurable setting.
@@ -143,12 +163,12 @@ type SettingOption struct {
 
 // ContextMenuEntry registers an action in the right-click menu.
 type ContextMenuEntry struct {
-	ID        string              `json:"id"`
-	Target    string              `json:"target"` // "member", "message", "channel"
-	Label     string              `json:"label"`
-	Icon      string              `json:"icon,omitempty"`
-	Condition string              `json:"condition,omitempty"`
-	Action    ContextMenuAction   `json:"action"`
+	ID        string            `json:"id"`
+	Target    string            `json:"target"` // "member", "message", "channel"
+	Label     string            `json:"label"`
+	Icon      string            `json:"icon,omitempty"`
+	Condition string            `json:"condition,omitempty"`
+	Action    ContextMenuAction `json:"action"`
 }
 
 // ContextMenuAction defines what happens when a context menu entry is clicked.
@@ -229,22 +249,22 @@ type SettingsPage struct {
 // The template is interpolated with the member's custom fields from this plugin.
 type StatusLineDef struct {
 	Template  string `json:"template"`            // e.g. "Spielt {{game_name}}"
-	Condition string `json:"condition,omitempty"`  // e.g. "game_name != null"
-	Icon      string `json:"icon,omitempty"`       // lucide icon name (e.g. "gamepad-2")
-	Color     string `json:"color,omitempty"`      // CSS color (e.g. "#2dd4bf")
+	Condition string `json:"condition,omitempty"` // e.g. "game_name != null"
+	Icon      string `json:"icon,omitempty"`      // lucide icon name (e.g. "gamepad-2")
+	Color     string `json:"color,omitempty"`     // CSS color (e.g. "#2dd4bf")
 }
 
 // ProfileSectionDef declares a section in the member profile popover.
 type ProfileSectionDef struct {
-	ID       string              `json:"id"`
-	Title    string              `json:"title"`
-	Fields   []ProfileFieldDef   `json:"fields"`
+	ID     string            `json:"id"`
+	Title  string            `json:"title"`
+	Fields []ProfileFieldDef `json:"fields"`
 }
 
 // ProfileFieldDef is a single field shown in a profile section.
 type ProfileFieldDef struct {
 	Label    string `json:"label"`
-	Template string `json:"template"` // e.g. "{{steam_id}}" or a static URL template
+	Template string `json:"template"`      // e.g. "{{steam_id}}" or a static URL template
 	URL      string `json:"url,omitempty"` // if set, field value is a clickable link
 }
 
@@ -254,9 +274,9 @@ type ProfileFieldDef struct {
 type ModalDef struct {
 	ID           string       `json:"id"`
 	Title        string       `json:"title"`
-	Trigger      string       `json:"trigger,omitempty"`       // command that opens it (e.g. "!steam")
+	Trigger      string       `json:"trigger,omitempty"` // command that opens it (e.g. "!steam")
 	Fields       []ModalField `json:"fields"`
-	StatusField  string       `json:"status_field,omitempty"`  // custom field key shown as status
+	StatusField  string       `json:"status_field,omitempty"` // custom field key shown as status
 	StatusLabels *struct {
 		Linked   string `json:"linked,omitempty"`
 		Unlinked string `json:"unlinked,omitempty"`
@@ -301,10 +321,10 @@ type CustomPermissionDef struct {
 // RouteDef declares an HTTP endpoint the plugin exposes.
 // Mounted at /api/plugins/{id}/routes/{path}.
 type RouteDef struct {
-	Path       string `json:"path"`                  // e.g. "libraries", "items/{itemId}"
-	Method     string `json:"method"`                // HTTP method: GET, POST, PUT, DELETE
-	Handler    string `json:"handler"`               // JS function name in server/main.js
-	Permission string `json:"permission,omitempty"`   // custom permission key required (empty = any member)
+	Path       string `json:"path"`                 // e.g. "libraries", "items/{itemId}"
+	Method     string `json:"method"`               // HTTP method: GET, POST, PUT, DELETE
+	Handler    string `json:"handler"`              // JS function name in server/main.js
+	Permission string `json:"permission,omitempty"` // custom permission key required (empty = any member)
 }
 
 // validHookActions is the set of recognized declarative hook action types.
@@ -333,23 +353,23 @@ var semverRe = regexp.MustCompile(`^\d+\.\d+\.\d+`)
 
 // validPermissions is the set of recognized plugin API scopes.
 var validPermissions = map[string]bool{
-	"read:members":          true,
-	"read:channels":         true,
-	"read:messages":         true,
-	"write:messages":        true,
-	"voice:tile":            true,
-	"voice:overlay":         true,
-	"storage:plugin":        true,
-	"storage:custom_fields": true,
-	"storage:secure":        true,
-	"webhook:receive":       true,
+	"read:members":           true,
+	"read:channels":          true,
+	"read:messages":          true,
+	"write:messages":         true,
+	"voice:tile":             true,
+	"voice:overlay":          true,
+	"storage:plugin":         true,
+	"storage:custom_fields":  true,
+	"storage:secure":         true,
+	"webhook:receive":        true,
 	"messaging:participants": true,
-	"member:kick":           true,
-	"network:http":          true,
-	"scheduled:run":         true,
-	"ui:modal":              true,
-	"plugin:ipc":            true,
-	"routes:http":           true,
+	"member:kick":            true,
+	"network:http":           true,
+	"scheduled:run":          true,
+	"ui:modal":               true,
+	"plugin:ipc":             true,
+	"routes:http":            true,
 }
 
 // validRouteMethods is the set of valid HTTP methods for plugin routes.
@@ -446,6 +466,12 @@ func (m *Manifest) Validate() error {
 		if !validContextMenuActionTypes[e.Action.Type] {
 			return fmt.Errorf("manifest: context_menu_entries[%d].action.type %q must be open_url or webhook", i, e.Action.Type)
 		}
+		if err := validateManifestAction(e.Action); err != nil {
+			return fmt.Errorf("manifest: context_menu_entries[%d].action: %w", i, err)
+		}
+	}
+	if m.WebhookURL != "" && !validateHTTPURL(m.WebhookURL) {
+		return fmt.Errorf("manifest: webhook_url must use http(s) without URL credentials")
 	}
 
 	// Validate declarative hooks
@@ -494,6 +520,12 @@ func (m *Manifest) Validate() error {
 		if e.Label == "" {
 			return fmt.Errorf("manifest: plus_menu_entries[%d].label is required", i)
 		}
+		if !validContextMenuActionTypes[e.Action.Type] {
+			return fmt.Errorf("manifest: plus_menu_entries[%d].action.type %q must be open_url or webhook", i, e.Action.Type)
+		}
+		if err := validateManifestAction(e.Action); err != nil {
+			return fmt.Errorf("manifest: plus_menu_entries[%d].action: %w", i, err)
+		}
 	}
 
 	// Validate message actions
@@ -503,6 +535,19 @@ func (m *Manifest) Validate() error {
 		}
 		if a.Label == "" {
 			return fmt.Errorf("manifest: message_actions[%d].label is required", i)
+		}
+		if !validContextMenuActionTypes[a.Action.Type] {
+			return fmt.Errorf("manifest: message_actions[%d].action.type %q must be open_url or webhook", i, a.Action.Type)
+		}
+		if err := validateManifestAction(a.Action); err != nil {
+			return fmt.Errorf("manifest: message_actions[%d].action: %w", i, err)
+		}
+	}
+	for i, section := range m.ProfileSections {
+		for j, field := range section.Fields {
+			if field.URL != "" && !validateHTTPURL(field.URL) {
+				return fmt.Errorf("manifest: profile_sections[%d].fields[%d].url must use http(s) without URL credentials", i, j)
+			}
 		}
 	}
 
@@ -575,6 +620,12 @@ func (m *Manifest) Validate() error {
 		}
 		if b.Label == "" {
 			return fmt.Errorf("manifest: dock_buttons[%d].label is required", i)
+		}
+		if !validContextMenuActionTypes[b.Action.Type] {
+			return fmt.Errorf("manifest: dock_buttons[%d].action.type %q must be open_url or webhook", i, b.Action.Type)
+		}
+		if err := validateManifestAction(b.Action); err != nil {
+			return fmt.Errorf("manifest: dock_buttons[%d].action: %w", i, err)
 		}
 	}
 
