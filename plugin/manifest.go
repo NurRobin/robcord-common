@@ -122,6 +122,12 @@ type Manifest struct {
 	// Example: ["jellyfin_url"] → the admin-configured Jellyfin URL becomes an allowed host.
 	NetworkHostsFromSettings []string `json:"network_hosts_from_settings,omitempty"`
 
+	// Setting keys holding a JSON array of chat-addressable handles, e.g. the
+	// agents of a bridge plugin: [{"handle":"clanker","name":"…","description":"…"}].
+	// The workspace offers these handles in the composer's @ autocomplete; only
+	// handle, name and description are ever exposed to members.
+	MentionsFromSettings []string `json:"mentions_from_settings,omitempty"`
+
 	// Custom permissions this plugin defines, integrated into the workspace RBAC system.
 	// Admins can assign these to roles. Plugin route handlers can require them.
 	CustomPermissions []CustomPermissionDef `json:"custom_permissions,omitempty"`
@@ -641,6 +647,11 @@ func (m *Manifest) Validate() error {
 		}
 		if !settingKeys[key] {
 			return fmt.Errorf("manifest: network_hosts_from_settings[%d] %q does not reference a defined setting", i, key)
+		}
+	}
+	for i, key := range m.MentionsFromSettings {
+		if !settingKeys[key] {
+			return fmt.Errorf("manifest: mentions_from_settings[%d] %q does not reference a defined setting", i, key)
 		}
 	}
 

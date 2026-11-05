@@ -393,3 +393,13 @@ func TestValidateAcceptsVoiceAgentPermission(t *testing.T) {
 		t.Fatalf("expected voice:agent to be a valid permission, got: %v", err)
 	}
 }
+
+func TestValidateMentionsFromSettings_BadRef(t *testing.T) {
+	m := &Manifest{
+		ID: "com.test.a", Name: "Test", Version: "1.0.0", Type: TypeBackgroundService,
+		MentionsFromSettings: []string{"nonexistent_key"},
+	}
+	if err := m.Validate(); err == nil {
+		t.Fatal("expected error for mentions_from_settings referencing undefined setting")
+	}
+}
