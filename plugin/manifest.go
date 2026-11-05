@@ -359,6 +359,7 @@ var validPermissions = map[string]bool{
 	"write:messages":         true,
 	"voice:tile":             true,
 	"voice:overlay":          true,
+	"voice:agent":            true,
 	"storage:plugin":         true,
 	"storage:custom_fields":  true,
 	"storage:secure":         true,

@@ -380,3 +380,16 @@ func TestParseManifestWithNewFields(t *testing.T) {
 		t.Errorf("unexpected routes: %v", m.Routes)
 	}
 }
+
+func TestValidateAcceptsVoiceAgentPermission(t *testing.T) {
+	m := &Manifest{
+		ID:          "com.example.recorder",
+		Name:        "Recorder",
+		Version:     "1.0.0",
+		Type:        TypeBackgroundService,
+		Permissions: []string{"voice:agent"},
+	}
+	if err := m.Validate(); err != nil {
+		t.Fatalf("expected voice:agent to be a valid permission, got: %v", err)
+	}
+}
